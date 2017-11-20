@@ -36,12 +36,13 @@ def cluster_details():
     logger.addHandler(consolelog)
     logger.addHandler(filelog)
 
-    start_time = []
-    end_time = []
+    # start_time = []
+    # end_time = []
     now = datetime.now()
     cluster_id = []
     cluster_id_region = []
     cluster_id_timestamp = []
+    cluster_id_region_time = []
     parser = argparse.ArgumentParser(description='Program to fetch cluster details of customer')
     parser.add_argument('--access-key', action="store", dest="access_key", help='Enter your aws access key',
                         required=True)
@@ -121,7 +122,7 @@ def cluster_details():
         cluster_id_region.append({'cluster_id': i['cluster_id'], 'region': i['region']})
         count = count + 1
         # print info message to output the shortlisted clusters
-    if len(cluster_id) == 0:
+    if len(cluster_id_region) == 0:
         logger.error("You don't have any large cluster i.e cluster of atleast 10 nodes")
         # print "You don't have any large cluster i.e cluster of atleast 10 nodes"
         sys.exit(0)
@@ -154,9 +155,10 @@ def cluster_details():
         mssg1 = "cluster_status['Cluster']['Status']['Timeline']['CreationDateTime'] = %s", \
                 cluster_status['Cluster']['Status']['Timeline']['CreationDateTime']
         logger.debug(mssg1)
+
         if cluster_status['Cluster']["Status"]["State"] == "RUNNING" or cluster_status['Cluster']["Status"][
             "State"] == "WAITING" or cluster_status['Cluster']["Status"]["State"] == "STARTING":
-            end_time.append(1)
+            e_time = 1
         else:
             e_time = datetime.strptime(str(cluster_status['Cluster']["Status"]["Timeline"]["EndDateTime"]), '%Y-%m-%d '
                                                                                                             '%H:%M:%S'
@@ -165,8 +167,10 @@ def cluster_details():
             mssg2 = "cluster_status['Cluster']['Status']['Timeline']['EndDateTime'] = ", \
                     cluster_status['Cluster']['Status']['Timeline']['EndDateTime']
             logger.debug(mssg2)
-            end_time.append(e_time)
-        start_time.append(s_time)
+            # end_time.append(e_time)
+        # start_time.append(s_time)
+        cluster_id_region_time.append({'cluster_id': id['cluster_id'], 'region': id['region'], 's_time': s_time, 'e_time': e_time})
+
         # also add applications in this list
         try:
             cluster_status = client.list_instance_groups(
@@ -204,11 +208,11 @@ def cluster_details():
             })
     logger.info("All Cluster details are fetched!")
     logger.debug(cluster_node_details)
-    return start_time, end_time, cluster_id, access_key, secret_key, cluster_node_details
+    return access_key, secret_key, cluster_node_details, cluster_id_region_time
 
 
 def cloudwatch_metric():
-    start_time, end_time, cluster_id, access_key, secret_key, cluster_node_details = cluster_details()
+    access_key, secret_key, cluster_node_details, cluster_id_region_time = cluster_details()
     logger = logging.getLogger('CloudwatchLog')
     logger.setLevel(logging.INFO)
     filelog = logging.FileHandler('Cloudwatch.log')
@@ -222,9 +226,9 @@ def cloudwatch_metric():
     logger.addHandler(consolelog)
     logger.addHandler(filelog)
     logger.info("Now fetching cloudwatch metrics of selected 10 clusters....")
-    logger.debug(start_time)
-    logger.debug(end_time)
-    logger.debug(start_time)
+    # logger.debug(start_time)
+    # logger.debug(end_time)
+    # logger.debug(start_time)
 
     top_dir = "emr_metrics"
     top_cwd = os.getcwd() + "/" + top_dir
@@ -234,27 +238,28 @@ def cloudwatch_metric():
     with open(file, 'w') as f:
         f.write(str(cluster_node_details))
 
-    try:
-        client = boto3.client('cloudwatch', aws_access_key_id=access_key, aws_secret_access_key=secret_key)
-    except ClientError:
-        logger.error("Please check your secret key and access key")
-        sys.exit(0)
-
     if not os.path.exists(top_dir):
         os.makedirs(top_dir)
-    logger.debug("length of start_time list = ", len(start_time))
-    for i in range(len(cluster_id)):
+    # logger.debug("length of start_time list = ", len(start_time))
+    for i in cluster_id_region_time:
+        try:
+            client = boto3.client('cloudwatch', aws_access_key_id=access_key, aws_secret_access_key=secret_key,
+                                  region_name=i['region'])
+        except ClientError:
+            logger.error("Please check your secret key and access key")
+            sys.exit(0)
+
         cwd = os.getcwd() + "/" + top_dir
-        dir = cwd + "/" + cluster_id[i]
+        dir = cwd + "/" + i['cluster_id']
         if not os.path.exists(dir):
             os.makedirs(dir)
 
         endTime = None
-        startTime = start_time[i]
+        startTime = i['s_time']
         days_left = sys.maxint
         while days_left > 0:
             endTime = startTime + timedelta(days=5)
-            logger.info("Fetching MemoryAvailableMB metric for cluster with id %s", cluster_id[i])
+            logger.info("Fetching MemoryAvailableMB metric for cluster with id %s", i['cluster_id'])
             logger.debug("Start time of cluster %s" % startTime)
             logger.debug("End time of cluster %s" % endTime)
             response = client.get_metric_statistics(Namespace="AWS/ElasticMapReduce",
@@ -262,7 +267,7 @@ def cloudwatch_metric():
                                                     Dimensions=[
                                                         {
                                                             'Name': 'JobFlowId',
-                                                            'Value': cluster_id[i]
+                                                            'Value': i['cluster_id']
                                                         },
                                                     ],
                                                     StartTime=startTime,
@@ -273,12 +278,12 @@ def cloudwatch_metric():
                                                     ],
                                                     )
 
-            logger.info("MemoryAvailableMB Metrcs obtained for cluster %s " % cluster_id[i])
+            logger.info("MemoryAvailableMB Metrcs obtained for cluster %s " % i['cluster_id'])
             logger.debug(response)
             #response
             #response = json.dumps(response, default=datetime_handler)
             #print str(response)
-            file_name = dir + "/" + "MemoryAvailableMB_%s.ans" % (cluster_id[i])
+            file_name = dir + "/" + "MemoryAvailableMB_%s.ans" % (i['cluster_id'])
             if not os.path.exists(file_name):
                 with open(file_name, 'w') as f:
                     f.write(str(response))
@@ -291,7 +296,7 @@ def cloudwatch_metric():
                                                     Dimensions=[
                                                         {
                                                             'Name': 'JobFlowId',
-                                                            'Value': cluster_id[i]
+                                                            'Value': i['cluster_id']
                                                         },
                                                     ],
                                                     StartTime=startTime,
@@ -302,11 +307,11 @@ def cloudwatch_metric():
                                                     ],
                                                     )
 
-            logger.info("MemoryTotalMB Metrcs obtained for cluster %s " % cluster_id[i])
+            logger.info("MemoryTotalMB Metrcs obtained for cluster %s " % i['cluster_id'])
             logger.debug(response)
             #response = json.dumps(response, default=datetime_handler)
             #print "response=", response
-            file_name = dir + "/" + "MemoryTotalMB_%s.ans" % (cluster_id[i])
+            file_name = dir + "/" + "MemoryTotalMB_%s.ans" % (i['cluster_id'])
             if not os.path.exists(file_name):
                 with open(file_name, 'w') as f:
                     f.write(str(response))
@@ -319,7 +324,7 @@ def cloudwatch_metric():
                                                     Dimensions=[
                                                         {
                                                             'Name': 'JobFlowId',
-                                                            'Value': cluster_id[i]
+                                                            'Value': i['cluster_id']
                                                         },
                                                     ],
                                                     StartTime=startTime,
@@ -330,11 +335,11 @@ def cloudwatch_metric():
                                                     ],
                                                     )
 
-            logger.info("TaskNodesRunning Metrcs obtained for cluster %s " % cluster_id[i])
+            logger.info("TaskNodesRunning Metrcs obtained for cluster %s " % i['cluster_id'])
             logger.debug(response)
             #response = json.dumps(response, default=datetime_handler)
             print "resp=", response
-            file_name = dir + "/" + "TaskNodesRunning_%s.ans" % (cluster_id[i])
+            file_name = dir + "/" + "TaskNodesRunning_%s.ans" % (i['cluster_id'])
             if not os.path.exists(file_name):
                 with open(file_name, 'w') as f:
                     f.write(str(response))
@@ -347,7 +352,7 @@ def cloudwatch_metric():
                                                     Dimensions=[
                                                         {
                                                             'Name': 'JobFlowId',
-                                                            'Value': cluster_id[i]
+                                                            'Value': i['cluster_id']
                                                         },
                                                     ],
                                                     StartTime=startTime,
@@ -358,11 +363,11 @@ def cloudwatch_metric():
                                                     ],
                                                     )
 
-            logger.info("CoreNodesRunning Metrics obtained for cluster %s " % cluster_id[i])
+            logger.info("CoreNodesRunning Metrics obtained for cluster %s " % i['cluster_id'])
             logger.debug(response)
             #response = json.dumps(response, default=datetime_handler)
             #print "response = ", response
-            file_name = dir + "/" + "CoreNodesRunning_%s.ans" % (cluster_id[i])
+            file_name = dir + "/" + "CoreNodesRunning_%s.ans" % (i['cluster_id'])
             if not os.path.exists(file_name):
                 with open(file_name, 'w') as f:
                     f.write(str(response))
@@ -370,16 +375,16 @@ def cloudwatch_metric():
                 with open(file_name, 'a') as f:
                     f.write(str(response))
 
-            if end_time[i] == 1:
+            if i['e_time'] == 1:
                 diff = datetime.now() - startTime
             else:
-                diff = end_time[i] - startTime
+                diff = i['e_time'] - startTime
             days_left = min(5, diff.days)
             logger.debug("Days left = %s" % days_left)
             startTime = startTime + timedelta(days=days_left)
 
     now = datetime.now().strftime('%s')
-    zipfile = 'emr_metrics_%s' % (now)
+    zipfile = 'emr_metrics_%s' % now
     shutil.make_archive(zipfile, 'zip', './emr_metrics')
     shutil.rmtree('./emr_metrics')
 
