@@ -1,0 +1,1 @@
+{'clusters': [{'master_market_buy': u'ON_DEMAND', 'applications': [{u'Version': u'0.170', u'Name': u'Presto'}], 'worker_instance_type': u'r3.2xlarge', 'cluster_id': u'j-1SY1WBNFYMTHJ', 'task_market': None, 'worker_market_buy': u'ON_DEMAND', 'master_instance_type': u'r3.2xlarge', 'task_instance_type': None}]}

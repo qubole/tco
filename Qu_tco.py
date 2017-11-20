@@ -2,7 +2,7 @@ import json
 import os
 import re
 import sys
-from time import strftime, gmtime
+from time import strftime, gmtime, sleep
 import boto3
 import argparse
 import shutil
@@ -11,7 +11,6 @@ from botocore.exceptions import ClientError
 from datetime import datetime, timedelta
 from operator import itemgetter
 import logging
-from bson import json_util
 from dateutil.tz import tzlocal
 
 
@@ -20,16 +19,22 @@ from dateutil.tz import tzlocal
 # you don't need to set path of credential file path if you are passing it to this script from command line argument
 
 
-# list of cluster id's and email id of customer  must be given through command line argument
-# eg :- python cloudwatch_automate.py --access_key=<accesskey> --secret_key=<secret_key> --client=qubole  --email=h@qubole.com
+# list of cluster id's and email id of customer  must be given through command line argument eg :- python
+# cloudwatch_automate.py --access_key=<accesskey> --secret_key=<secret_key>
+
+def datetime_handler(x):
+    if isinstance(x, datetime.datetime):
+        return x.isoformat()
+    raise TypeError("Unknown type")
+
 
 def cluster_details():
     logger = logging.getLogger('CloudwatchLog')
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     filelog = logging.FileHandler('Cloudwatch.log')
-    filelog.setLevel(logging.DEBUG)
+    filelog.setLevel(logging.INFO)
     consolelog = logging.StreamHandler()
-    consolelog.setLevel(logging.ERROR)
+    consolelog.setLevel(logging.INFO)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s')
     filelog.setFormatter(formatter)
     consolelog.setFormatter(formatter)
@@ -43,26 +48,15 @@ def cluster_details():
     cluster_id = []
     cluster_id_region = []
     cluster_id_timestamp = []
-    # db = MySQLdb.connect("localhost", "root", "dell", "emrtcodb")
-    # cursor = db.cursor()
     parser = argparse.ArgumentParser(description='Program to fetch cluster details of customer')
     parser.add_argument('--access-key', action="store", dest="access_key", help='Enter your aws access key',
                         required=True)
     parser.add_argument('--secret-key', action="store", dest="secret_key", help='Enter your aws secret key',
                         required=True)
-    parser.add_argument('--client', action="store", dest="user_client", default='user',
-                        help='Enter --client=qubole if qubole is '
-                             'running it or --client=User if customer '
-                             'is running this script', required=True)
-
-    parser.add_argument('--email', action="store", dest="email", help='Enter email id of customer', required=True)
 
     results = parser.parse_args()
-    user_client = results.user_client
     access_key = results.access_key
     secret_key = results.secret_key
-    email = results.email
-    logging.debug("Client = %s" % user_client)
     cluster_node_details = {'clusters': []}
     master_instance_type = None
     worker_instance_type = None
@@ -78,40 +72,44 @@ def cluster_details():
     utc = pytz.UTC
     now_e = datetime.now()
     now_e = utc.localize(now_e)
+    # regex to extract day from date time of cluster timeLine
     day_pattern = re.compile("([\d]{1,4}) day")
 
     try:
+        logger.info("Fetching cluster id's across all AWS regions.......")
         for region in aws_regions:
-            print "region=", region
-            client = boto3.client('emr', aws_access_key_id=access_key, aws_secret_access_key=secret_key,
-                                  region_name=region)
+            client = boto3.client('emr',region_name=region)
             response = client.list_clusters(CreatedAfter=(now - timedelta(days=90)),
                                             CreatedBefore=datetime(now.year, now.month, now.day),
                                             ClusterStates=['TERMINATED', 'TERMINATING', 'WAITING', 'RUNNING'])
+            # sleep(2)
             logger.debug("clusters" % response)
-            print response
+            # print response
             for i in range(0, len(response['Clusters'])):
                 id = response['Clusters'][i]['Id']
                 cluster_status = client.list_instances(
                     ClusterId=id
                 )
-                print "region==", region
-                logger.info("Fetched Cluster id %s in %s" % (id, region))
+                # sleep(2)
                 cluster_state = response['Clusters'][i]['Status']['State']
+
                 if cluster_state == 'WAITING' or cluster_state == 'RUNNING' or cluster_state == 'TERMINATING':
                     end = now_e
                 else:
                     end = response['Clusters'][i]['Status']['Timeline']['EndDateTime']
+
                 time_stamp = end - response['Clusters'][i]['Status']['Timeline']['CreationDateTime']
 
                 time_s = day_pattern.search(str(time_stamp))
 
-                if time_s != None:
+                if time_s is not None:
                     cluster_id_timestamp.append({'cluster_id': id, 'time_stamp': time_s.group(1), 'region': region,
                                                  'total_nodes': len(cluster_status['Instances'])})
 
-    except ClientError:
-        logger.error("Please check your secret key and access key")
+            logger.info("Clusters fetched in %s region %s" % (region, json.dumps(cluster_id_timestamp)))
+    except ClientError as e:
+        print e
+        logger.error(e)
         sys.exit(0)
 
     logger.info("Selecting 10 longest running clusters........")
@@ -119,27 +117,30 @@ def cluster_details():
 
     if cluster_id_timestamp is None:
         logger.error("No cluster found in aws emr account corresponding to given access tokens")
+
     # change the logic of ordering the cluster i.e order on the basis of largest size cluster and timestamp must be
     # atleast 10 days
+
     for i in cluster_id_timestamp:
         if count >= 10:
             break
         if int(i['time_stamp']) >= 10:
-            print "time_stamp", time_stamp
             cluster_id.append(i['cluster_id'])
             cluster_id_region.append({'cluster_id': i['cluster_id'], 'region': i['region']})
             count = count + 1
-        # print info message to output the shortlisted clusters
+            # print info message to output the shortlisted clusters
     if len(cluster_id) == 0:
         logger.error("You don't have any large cluster i.e cluster of atleast 10 nodes")
-        print "You don't have any large cluster i.e cluster of atleast 10 nodes"
+        # print "You don't have any large cluster i.e cluster of atleast 10 nodes"
         sys.exit(0)
 
     else:
-        logger.info(
-            "Shortlisted clusters on the basis of number of time stamp and cluster's timestamp are %s" % cluster_id)
-        print "Shortlisted clusters on the basis of number of time stamp and cluster's timestamp are %s" % cluster_id
+        clusterid = ''.join(cluster_id)
+        logger.info("Shortlisted clusters on the basis of number of time stamp and cluster's timestamp are %s" % clusterid)
+        # print "Shortlisted clusters on the basis of number of time stamp and cluster's timestamp are %s" % cluster_id
 
+    logger.info("Fetching cluster details of 10 shortlisted clusters, this will take some time"
+                ".....")
     for id in cluster_id_region:
         try:
             client = boto3.client('emr', aws_access_key_id=access_key, aws_secret_access_key=secret_key,
@@ -148,10 +149,11 @@ def cluster_details():
                 ClusterId=id['cluster_id']
             )
 
-        except ClientError:
-            logger.error("Please check your secret key and access key")
+        except ClientError as e:
+            print e
+            logger.error(e)
             sys.exit(0)
-            # print "cluster_id==>>", cluster_id
+
         cluster_status = stdout
         s_time = datetime.strptime(str(cluster_status['Cluster']["Status"]["Timeline"]["CreationDateTime"]), '%Y-%m-%d '
                                                                                                              '%H:%M'
@@ -174,9 +176,17 @@ def cluster_details():
             end_time.append(e_time)
         start_time.append(s_time)
         # also add applications in this list
-        cluster_status = client.list_instance_groups(
-            ClusterId=id['cluster_id']
-        )
+        try:
+            cluster_status = client.list_instance_groups(
+                ClusterId=id['cluster_id']
+            )
+
+            cluster_applications = client.describe_cluster(
+                ClusterId=id['cluster_id']
+            )
+        except ClientError as e:
+            print e
+            logger.error(e)
 
         for i in range(0, len(cluster_status['InstanceGroups'])):
             if cluster_status['InstanceGroups'][i]['InstanceGroupType'] == 'MASTER':
@@ -197,34 +207,16 @@ def cluster_details():
                 'worker_instance_type': worker_instance_type,
                 'worker_market_buy': worker_market,
                 'task_instance_type': task_instance_type,
-                'task_market': task_market
+                'task_market': task_market,
+                'applications': cluster_applications['Cluster']['Applications']
             })
-    # insert_query = """INSERT INTO ClusterDetails (CLUSTER_ID,  CLUSTER_REGION, master_instance_type,
-    #                    core_instance_type, task_instance_type, MARKET_BUY) VALUES ("%s", "%s", "%s", "%s", "%s", "%s");""" % \
-    #                    (id['cluster_id'], id['region'], master_instance_type, worker_instance_type, task_instance_type,
-    #                     worker_market)
-    #     logger.debug(insert_query)
-    #     try:
-    #         # Execute the SQL command
-    #         cursor.execute(insert_query)
-    #         # Commit your changes in the database
-    #         db.commit()
-    #     except:
-    #         # Rollback in case there is any error
-    #         db.rollback()
-    #
-    # # disconnect from server
-    # db.close()
     logger.info("All Cluster details are fetched!")
-    logger.info("Done")
     logger.debug(cluster_node_details)
-    print "cluster id", cluster_id
-    return start_time, end_time, cluster_id, access_key, secret_key, user_client, email, cluster_node_details
+    return start_time, end_time, cluster_id, access_key, secret_key, cluster_node_details
 
 
 def cloudwatch_metric():
-    start_time, end_time, cluster_id, access_key, secret_key, client, email, cluster_node_details = cluster_details()
-    print "cluster_id =========", cluster_id
+    start_time, end_time, cluster_id, access_key, secret_key, cluster_node_details = cluster_details()
     logger = logging.getLogger('CloudwatchLog')
     logger.setLevel(logging.INFO)
     filelog = logging.FileHandler('Cloudwatch.log')
@@ -237,12 +229,11 @@ def cloudwatch_metric():
     # add the handlers to logger
     logger.addHandler(consolelog)
     logger.addHandler(filelog)
-    logger.info("Now Fetching Cloudwatch metrics of selected 10 clusters....")
+    logger.info("Now fetching cloudwatch metrics of selected 10 clusters....")
     logger.debug(start_time)
     logger.debug(end_time)
     logger.debug(start_time)
 
-    logger.debug("client = %s" % client)
     top_dir = "emr_metrics"
     top_cwd = os.getcwd() + "/" + top_dir
     if not os.path.exists(top_cwd):
@@ -269,11 +260,8 @@ def cloudwatch_metric():
         endTime = None
         startTime = start_time[i]
         days_left = sys.maxint
-        print "new_ starttime=", startTime
         while days_left > 0:
             endTime = startTime + timedelta(days=5)
-            print "starttime=", startTime
-            print "end_time=", endTime
             logger.info("Fetching MemoryAvailableMB metric for cluster with id %s", cluster_id[i])
             logger.debug("Start time of cluster %s" % startTime)
             logger.debug("End time of cluster %s" % endTime)
@@ -295,7 +283,8 @@ def cloudwatch_metric():
 
             logger.debug("MemoryAvailableMB Metrcs obtained for cluster %s " % cluster_id[i])
             logger.debug(response)
-            response = json.dumps(response, indent=4, default=json_util.default)
+            #response
+            response = json.dumps(response, default=datetime_handler)
             print str(response)
             file_name = dir + "/" + "MemoryAvailableMB_%s.ans" % (cluster_id[i])
             if not os.path.exists(file_name):
@@ -323,7 +312,7 @@ def cloudwatch_metric():
 
             logger.debug("MemoryTotalMB Metrcs obtained for cluster %s " % cluster_id[i])
             logger.debug(response)
-            response = json.dumps(response, indent=4, default=json_util.default)
+            response = json.dumps(response, default=datetime_handler)
             print "respon=", response
             file_name = dir + "/" + "MemoryTotalMB_%s.ans" % (cluster_id[i])
             if not os.path.exists(file_name):
@@ -351,7 +340,7 @@ def cloudwatch_metric():
 
             logger.debug("TaskNodesRunning Metrcs obtained for cluster %s " % cluster_id[i])
             logger.debug(response)
-            response = json.dumps(response, indent=4, default=json_util.default)
+            response = json.dumps(response, default=datetime_handler)
             print "resp=", response
             file_name = dir + "/" + "TaskNodesRunning_%s.ans" % (cluster_id[i])
             if not os.path.exists(file_name):
@@ -379,7 +368,7 @@ def cloudwatch_metric():
 
             logger.debug("CoreNodesRunning Metrics obtained for cluster %s " % cluster_id[i])
             logger.debug(response)
-            response = json.dumps(response, indent=4, default=json_util.default)
+            response = json.dumps(response, default=datetime_handler)
             print "resp", response
             file_name = dir + "/" + "CoreNodesRunning_%s.ans" % (cluster_id[i])
             if not os.path.exists(file_name):
@@ -395,10 +384,10 @@ def cloudwatch_metric():
                 diff = end_time[i] - startTime
             days_left = min(5, diff.days)
             logger.debug("Days left = %s" % days_left)
-            print "daysleft =", days_left
             startTime = startTime + timedelta(days=days_left)
 
-    zipfile = 'emr_metrics_%s' % email
+    now = datetime.now().strftime('%s')
+    zipfile = 'emr_metrics_%s_%s' % (email, now)
     shutil.make_archive(zipfile, 'zip', './emr_metrics')
     shutil.rmtree('./emr_metrics')
 
