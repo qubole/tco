@@ -22,12 +22,6 @@ from dateutil.tz import tzlocal
 # list of cluster id's and email id of customer  must be given through command line argument eg :- python
 # cloudwatch_automate.py --access_key=<accesskey> --secret_key=<secret_key>
 
-def datetime_handler(x):
-    if isinstance(x, datetime.datetime):
-        return x.isoformat()
-    raise TypeError("Unknown type")
-
-
 def cluster_details():
     logger = logging.getLogger('CloudwatchLog')
     logger.setLevel(logging.INFO)
@@ -281,11 +275,11 @@ def cloudwatch_metric():
                                                     ],
                                                     )
 
-            logger.debug("MemoryAvailableMB Metrcs obtained for cluster %s " % cluster_id[i])
+            logger.info("MemoryAvailableMB Metrcs obtained for cluster %s " % cluster_id[i])
             logger.debug(response)
             #response
-            response = json.dumps(response, default=datetime_handler)
-            print str(response)
+            #response = json.dumps(response, default=datetime_handler)
+            #print str(response)
             file_name = dir + "/" + "MemoryAvailableMB_%s.ans" % (cluster_id[i])
             if not os.path.exists(file_name):
                 with open(file_name, 'w') as f:
@@ -310,10 +304,10 @@ def cloudwatch_metric():
                                                     ],
                                                     )
 
-            logger.debug("MemoryTotalMB Metrcs obtained for cluster %s " % cluster_id[i])
+            logger.info("MemoryTotalMB Metrcs obtained for cluster %s " % cluster_id[i])
             logger.debug(response)
-            response = json.dumps(response, default=datetime_handler)
-            print "respon=", response
+            #response = json.dumps(response, default=datetime_handler)
+            #print "response=", response
             file_name = dir + "/" + "MemoryTotalMB_%s.ans" % (cluster_id[i])
             if not os.path.exists(file_name):
                 with open(file_name, 'w') as f:
@@ -338,9 +332,9 @@ def cloudwatch_metric():
                                                     ],
                                                     )
 
-            logger.debug("TaskNodesRunning Metrcs obtained for cluster %s " % cluster_id[i])
+            logger.info("TaskNodesRunning Metrcs obtained for cluster %s " % cluster_id[i])
             logger.debug(response)
-            response = json.dumps(response, default=datetime_handler)
+            #response = json.dumps(response, default=datetime_handler)
             print "resp=", response
             file_name = dir + "/" + "TaskNodesRunning_%s.ans" % (cluster_id[i])
             if not os.path.exists(file_name):
@@ -366,10 +360,10 @@ def cloudwatch_metric():
                                                     ],
                                                     )
 
-            logger.debug("CoreNodesRunning Metrics obtained for cluster %s " % cluster_id[i])
+            logger.info("CoreNodesRunning Metrics obtained for cluster %s " % cluster_id[i])
             logger.debug(response)
-            response = json.dumps(response, default=datetime_handler)
-            print "resp", response
+            #response = json.dumps(response, default=datetime_handler)
+            #print "response = ", response
             file_name = dir + "/" + "CoreNodesRunning_%s.ans" % (cluster_id[i])
             if not os.path.exists(file_name):
                 with open(file_name, 'w') as f:
