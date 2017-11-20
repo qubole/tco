@@ -72,7 +72,7 @@ def cluster_details():
     try:
         logger.info("Fetching cluster id's across all AWS regions.......")
         for region in aws_regions:
-            client = boto3.client('emr',region_name=region)
+            client = boto3.client('emr', aws_access_key_id=access_key, aws_secret_access_key=secret_key, region_name=region)
             response = client.list_clusters(CreatedAfter=(now - timedelta(days=90)),
                                             CreatedBefore=datetime(now.year, now.month, now.day),
                                             ClusterStates=['TERMINATED', 'TERMINATING', 'WAITING', 'RUNNING'])
@@ -81,10 +81,10 @@ def cluster_details():
             # print response
             for i in range(0, len(response['Clusters'])):
                 id = response['Clusters'][i]['Id']
-                cluster_status = client.list_instances(
-                    ClusterId=id
-                )
-                # sleep(2)
+                # cluster_status = client.list_instances(
+                #     ClusterId=id
+                # )
+                # # sleep(2)
                 cluster_state = response['Clusters'][i]['Status']['State']
 
                 if cluster_state == 'WAITING' or cluster_state == 'RUNNING' or cluster_state == 'TERMINATING':
@@ -97,17 +97,16 @@ def cluster_details():
                 time_s = day_pattern.search(str(time_stamp))
 
                 if time_s is not None:
-                    cluster_id_timestamp.append({'cluster_id': id, 'time_stamp': time_s.group(1), 'region': region,
-                                                 'total_nodes': len(cluster_status['Instances'])})
+                    cluster_id_timestamp.append({'cluster_id': id, 'time_stamp': time_s.group(1), 'region': region})
 
             logger.info("Clusters fetched in %s region %s" % (region, json.dumps(cluster_id_timestamp)))
     except ClientError as e:
-        print e
+        # print e
         logger.error(e)
         sys.exit(0)
 
     logger.info("Selecting 10 longest running clusters........")
-    cluster_id_timestamp = sorted(cluster_id_timestamp, key=itemgetter('total_nodes'), reverse=True)
+    cluster_id_timestamp = sorted(cluster_id_timestamp, key=itemgetter('time_stamp'), reverse=True)
 
     if cluster_id_timestamp is None:
         logger.error("No cluster found in aws emr account corresponding to given access tokens")
@@ -118,11 +117,10 @@ def cluster_details():
     for i in cluster_id_timestamp:
         if count >= 10:
             break
-        if int(i['time_stamp']) >= 10:
-            cluster_id.append(i['cluster_id'])
-            cluster_id_region.append({'cluster_id': i['cluster_id'], 'region': i['region']})
-            count = count + 1
-            # print info message to output the shortlisted clusters
+        cluster_id.append(i['cluster_id'])
+        cluster_id_region.append({'cluster_id': i['cluster_id'], 'region': i['region']})
+        count = count + 1
+        # print info message to output the shortlisted clusters
     if len(cluster_id) == 0:
         logger.error("You don't have any large cluster i.e cluster of atleast 10 nodes")
         # print "You don't have any large cluster i.e cluster of atleast 10 nodes"
@@ -381,7 +379,7 @@ def cloudwatch_metric():
             startTime = startTime + timedelta(days=days_left)
 
     now = datetime.now().strftime('%s')
-    zipfile = 'emr_metrics_%s_%s' % (email, now)
+    zipfile = 'emr_metrics_%s' % (now)
     shutil.make_archive(zipfile, 'zip', './emr_metrics')
     shutil.rmtree('./emr_metrics')
 
