@@ -373,7 +373,7 @@ def cloudwatch_metric():
     shutil.make_archive(zipfile, 'zip', './emr_metrics')
     shutil.rmtree('./emr_metrics')
 
-    logger.info("filename %s.zip of all cluster's metrics is created successfully in the same location." % zipfile)
+    logger.info("Success!  file %s.zip is created successfully in the same location." % zipfile)
     return {"message": "files created successfully in the same location", "status": "success"}
 
 
