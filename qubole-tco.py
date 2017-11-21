@@ -1,26 +1,22 @@
+import argparse
 import json
+import logging
 import os
 import re
-import sys
-from time import strftime, gmtime, sleep
-import boto3
-import argparse
 import shutil
-import pytz
-from botocore.exceptions import ClientError
+import sys
 from datetime import datetime, timedelta
 from operator import itemgetter
-import logging
-from dateutil.tz import tzlocal
+from time import sleep
+
+import boto3
+import pytz
+from botocore.exceptions import ClientError
 
 
-# Before running this script, download and install aws cloud_watch cli using this doc -
-# http://docs.aws.amazon.com/AmazonCloudWatch/latest/cli/SetupCLI.html
-# you don't need to set path of credential file path if you are passing it to this script from command line argument
-
-
-# list of cluster id's and email id of customer  must be given through command line argument eg :- python
-# cloudwatch_automate.py --access_key=<accesskey> --secret_key=<secret_key>
+# Follow these https://github.com/qubole/tco/blob/master/README.md instructions before running this script
+# access and secrete keys must be given as an input for eg:-
+# python cloudwatch_automate.py --access_key=<accesskey> --secret_key=<secret_key>
 
 def cluster_details():
     logger = logging.getLogger('CloudwatchLog')
@@ -72,18 +68,14 @@ def cluster_details():
         logger.info("Fetching cluster id's across all AWS regions.......")
         for region in aws_regions:
             client = boto3.client('emr', aws_access_key_id=access_key, aws_secret_access_key=secret_key, region_name=region)
-            response = client.list_clusters(CreatedAfter=(now - timedelta(days=90)),
+            response = client.list_clusters(CreatedAfter=(now - timedelta(days=60)),
                                             CreatedBefore=datetime(now.year, now.month, now.day),
                                             ClusterStates=['TERMINATED', 'TERMINATING', 'WAITING', 'RUNNING'])
-            # sleep(2)
+            sleep(2)
             logger.debug("clusters" % response)
-            # print response
             for i in range(0, len(response['Clusters'])):
                 id = response['Clusters'][i]['Id']
-                # cluster_status = client.list_instances(
-                #     ClusterId=id
-                # )
-                # # sleep(2)
+
                 cluster_state = response['Clusters'][i]['Status']['State']
 
                 if cluster_state == 'WAITING' or cluster_state == 'RUNNING' or cluster_state == 'TERMINATING':
@@ -98,9 +90,8 @@ def cluster_details():
                 if time_s is not None:
                     cluster_id_timestamp.append({'cluster_id': id, 'time_stamp': time_s.group(1), 'region': region})
 
-            logger.info("Clusters fetched in %s region %s" % (region, json.dumps(cluster_id_timestamp)))
+        logger.info("Fetched Clusters - %s" % json.dumps(cluster_id_timestamp))
     except ClientError as e:
-        # print e
         logger.error(e)
         sys.exit(0)
 
@@ -127,7 +118,7 @@ def cluster_details():
 
     else:
         clusterid = ''.join(cluster_id)
-        logger.info("Shortlisted clusters on the basis of number of time stamp and cluster's timestamp are %s" % clusterid)
+        logger.info("Shortlisted clusters on the basis of number of time stamp and cluster's timestamp are - \n %s" % clusterid)
         # print "Shortlisted clusters on the basis of number of time stamp and cluster's timestamp are %s" % cluster_id
 
     logger.info("Fetching cluster details of 10 shortlisted clusters, this will take some time"
@@ -227,14 +218,14 @@ def cloudwatch_metric():
     top_cwd = os.getcwd() + "/" + top_dir
     if not os.path.exists(top_cwd):
         os.makedirs(top_cwd)
-    content = json.dumps(cluster_node_details,indent=4, sort_keys=True)
+    content = json.dumps(cluster_node_details, indent=4, sort_keys=True)
     file = top_cwd + "/cluster_config.json"
     with open(file, 'w') as f:
         f.write(content)
 
     if not os.path.exists(top_dir):
         os.makedirs(top_dir)
-    # logger.debug("length of start_time list = ", len(start_time))
+
     for i in cluster_id_region_time:
         try:
             client = boto3.client('cloudwatch', aws_access_key_id=access_key, aws_secret_access_key=secret_key,
@@ -272,7 +263,7 @@ def cloudwatch_metric():
                                                     ],
                                                     )
 
-            logger.info("MemoryAvailableMB Metrcs obtained for cluster %s " % i['cluster_id'])
+            logger.debug("MemoryAvailableMB Metrics obtained for cluster %s " % i['cluster_id'])
             logger.debug(response)
             #response
             #response = json.dumps(response, default=datetime_handler)
@@ -284,6 +275,7 @@ def cloudwatch_metric():
                 with open(file_name, 'a') as f:
                     f.write(str(response))
 
+            logger.info("Fetching MemoryTotalMB metric for cluster with id %s", i['cluster_id'])
             response = client.get_metric_statistics(Namespace="AWS/ElasticMapReduce",
                                                     MetricName='MemoryTotalMB',
                                                     Dimensions=[
@@ -300,9 +292,9 @@ def cloudwatch_metric():
                                                     ],
                                                     )
 
-            logger.info("MemoryTotalMB Metrcs obtained for cluster %s " % i['cluster_id'])
+            logger.debug("MemoryTotalMB Metrics obtained for cluster %s " % i['cluster_id'])
             logger.debug(response)
-            #response = json.dumps(response, default=datetime_handler)
+
             file_name = dir + "/" + "MemoryTotalMB_%s.ans" % (i['cluster_id'])
             if not os.path.exists(file_name):
                 with open(file_name, 'w') as f:
@@ -311,6 +303,7 @@ def cloudwatch_metric():
                 with open(file_name, 'a') as f:
                     f.write(str(response))
 
+            logger.info("Fetching TaskNodesRunning metric for cluster with id %s", i['cluster_id'])
             response = client.get_metric_statistics(Namespace="AWS/ElasticMapReduce",
                                                     MetricName='TaskNodesRunning',
                                                     Dimensions=[
@@ -327,9 +320,9 @@ def cloudwatch_metric():
                                                     ],
                                                     )
 
-            logger.info("TaskNodesRunning Metrcs obtained for cluster %s " % i['cluster_id'])
+            logger.debug("TaskNodesRunning Metrics obtained for cluster %s " % i['cluster_id'])
             logger.debug(response)
-            #response = json.dumps(response, default=datetime_handler)
+
             file_name = dir + "/" + "TaskNodesRunning_%s.ans" % (i['cluster_id'])
             if not os.path.exists(file_name):
                 with open(file_name, 'w') as f:
@@ -337,6 +330,8 @@ def cloudwatch_metric():
             else:
                 with open(file_name, 'a') as f:
                     f.write(str(response))
+
+            logger.info("Fetching CoreNodesRunning metric for cluster with id %s", i['cluster_id'])
 
             response = client.get_metric_statistics(Namespace="AWS/ElasticMapReduce",
                                                     MetricName='CoreNodesRunning',
@@ -354,10 +349,9 @@ def cloudwatch_metric():
                                                     ],
                                                     )
 
-            logger.info("CoreNodesRunning Metrics obtained for cluster %s " % i['cluster_id'])
+            logger.debug("CoreNodesRunning Metrics obtained for cluster %s " % i['cluster_id'])
             logger.debug(response)
-            #response = json.dumps(response, default=datetime_handler)
-            #print "response = ", response
+
             file_name = dir + "/" + "CoreNodesRunning_%s.ans" % (i['cluster_id'])
             if not os.path.exists(file_name):
                 with open(file_name, 'w') as f:
@@ -379,7 +373,7 @@ def cloudwatch_metric():
     shutil.make_archive(zipfile, 'zip', './emr_metrics')
     shutil.rmtree('./emr_metrics')
 
-    logger.info(" %s compressed file of all cluster's metrics is created successfully in the same location." % zipfile)
+    logger.info("filename %s.zip of all cluster's metrics is created successfully in the same location." % zipfile)
     return {"message": "files created successfully in the same location", "status": "success"}
 
 

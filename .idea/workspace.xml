@@ -2,9 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7cd374ae-a264-42e2-8680-846b317914c4" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/Qu_tco.py" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/dist/qubole-tco-0.31.tar.gz" afterPath="$PROJECT_DIR$/dist/qubole-tco-0.31.tar.gz" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/setup.py" afterPath="$PROJECT_DIR$/setup.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qubole-tco.py" afterPath="$PROJECT_DIR$/qubole-tco.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -28,10 +26,10 @@
       <file leaf-file-name="qubole-tco.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/qubole-tco.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="435">
-              <caret line="200" column="57" lean-forward="true" selection-start-line="200" selection-start-column="57" selection-end-line="200" selection-end-column="57" />
+            <state relative-caret-position="692">
+              <caret line="375" column="33" lean-forward="false" selection-start-line="375" selection-start-column="33" selection-end-line="375" selection-end-column="33" />
               <folding>
-                <element signature="e#0#11#0" expanded="true" />
+                <element signature="e#0#15#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -41,13 +39,19 @@
         <entry file="file://$PROJECT_DIR$/emr_metrics_1511246879/cluster_config.json">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="0">
-              <caret line="0" column="36" lean-forward="true" selection-start-line="0" selection-start-column="36" selection-end-line="0" selection-end-column="36" />
+              <caret line="0" column="36" lean-forward="false" selection-start-line="0" selection-start-column="36" selection-end-line="0" selection-end-column="36" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
     </leaf>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>strftime</find>
+      <find>gmtime</find>
+    </findStrings>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -160,7 +164,7 @@
     <entry file="file://$PROJECT_DIR$/emr_metrics_1511246879/cluster_config.json">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
-          <caret line="0" column="36" lean-forward="true" selection-start-line="0" selection-start-column="36" selection-end-line="0" selection-end-column="36" />
+          <caret line="0" column="36" lean-forward="false" selection-start-line="0" selection-start-column="36" selection-end-line="0" selection-end-column="36" />
           <folding />
         </state>
       </provider>
@@ -175,10 +179,10 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/qubole-tco.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="435">
-          <caret line="200" column="57" lean-forward="true" selection-start-line="200" selection-start-column="57" selection-end-line="200" selection-end-column="57" />
+        <state relative-caret-position="692">
+          <caret line="375" column="33" lean-forward="false" selection-start-line="375" selection-start-column="33" selection-end-line="375" selection-end-column="33" />
           <folding>
-            <element signature="e#0#11#0" expanded="true" />
+            <element signature="e#0#15#0" expanded="true" />
           </folding>
         </state>
       </provider>
