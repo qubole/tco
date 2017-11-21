@@ -11,5 +11,5 @@ Steps to run this script -
 
 3. python setup.py develop
 
-4. python qubole-tco.py --access-key=<your access-key> --secret-key=<your secret-key>
+4. python qubole-tco.py --access-key=<insert access-key> --secret-key=<insert secret-access-key>
 ```
