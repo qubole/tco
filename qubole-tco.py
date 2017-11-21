@@ -36,8 +36,6 @@ def cluster_details():
     logger.addHandler(consolelog)
     logger.addHandler(filelog)
 
-    # start_time = []
-    # end_time = []
     now = datetime.now()
     cluster_id = []
     cluster_id_region = []
@@ -167,11 +165,9 @@ def cluster_details():
             mssg2 = "cluster_status['Cluster']['Status']['Timeline']['EndDateTime'] = ", \
                     cluster_status['Cluster']['Status']['Timeline']['EndDateTime']
             logger.debug(mssg2)
-            # end_time.append(e_time)
-        # start_time.append(s_time)
+
         cluster_id_region_time.append({'cluster_id': id['cluster_id'], 'region': id['region'], 's_time': s_time, 'e_time': e_time})
 
-        # also add applications in this list
         try:
             cluster_status = client.list_instance_groups(
                 ClusterId=id['cluster_id']
@@ -197,14 +193,14 @@ def cluster_details():
 
         cluster_node_details.get('clusters').append(
             {
-                'cluster_id': id['cluster_id'],
-                'master_instance_type': master_instance_type,
-                'master_market_buy': master_market,
-                'worker_instance_type': worker_instance_type,
-                'worker_market_buy': worker_market,
-                'task_instance_type': task_instance_type,
-                'task_market': task_market,
-                'applications': cluster_applications['Cluster']['Applications']
+                "cluster_id": id['cluster_id'],
+                "master_instance_type": master_instance_type,
+                "master_market_buy": master_market,
+                "worker_instance_type": worker_instance_type,
+                "worker_market_buy": worker_market,
+                "task_instance_type": task_instance_type,
+                "task_market": task_market,
+                "applications": cluster_applications['Cluster']['Applications']
             })
     logger.info("All Cluster details are fetched!")
     logger.debug(cluster_node_details)
@@ -226,17 +222,15 @@ def cloudwatch_metric():
     logger.addHandler(consolelog)
     logger.addHandler(filelog)
     logger.info("Now fetching cloudwatch metrics of selected 10 clusters....")
-    # logger.debug(start_time)
-    # logger.debug(end_time)
-    # logger.debug(start_time)
 
     top_dir = "emr_metrics"
     top_cwd = os.getcwd() + "/" + top_dir
     if not os.path.exists(top_cwd):
         os.makedirs(top_cwd)
+    content = json.dumps(cluster_node_details,indent=4, sort_keys=True)
     file = top_cwd + "/cluster_config.json"
     with open(file, 'w') as f:
-        f.write(str(cluster_node_details))
+        f.write(content)
 
     if not os.path.exists(top_dir):
         os.makedirs(top_dir)
@@ -282,7 +276,6 @@ def cloudwatch_metric():
             logger.debug(response)
             #response
             #response = json.dumps(response, default=datetime_handler)
-            #print str(response)
             file_name = dir + "/" + "MemoryAvailableMB_%s.ans" % (i['cluster_id'])
             if not os.path.exists(file_name):
                 with open(file_name, 'w') as f:
@@ -310,7 +303,6 @@ def cloudwatch_metric():
             logger.info("MemoryTotalMB Metrcs obtained for cluster %s " % i['cluster_id'])
             logger.debug(response)
             #response = json.dumps(response, default=datetime_handler)
-            #print "response=", response
             file_name = dir + "/" + "MemoryTotalMB_%s.ans" % (i['cluster_id'])
             if not os.path.exists(file_name):
                 with open(file_name, 'w') as f:
@@ -338,7 +330,6 @@ def cloudwatch_metric():
             logger.info("TaskNodesRunning Metrcs obtained for cluster %s " % i['cluster_id'])
             logger.debug(response)
             #response = json.dumps(response, default=datetime_handler)
-            print "resp=", response
             file_name = dir + "/" + "TaskNodesRunning_%s.ans" % (i['cluster_id'])
             if not os.path.exists(file_name):
                 with open(file_name, 'w') as f:
@@ -388,7 +379,7 @@ def cloudwatch_metric():
     shutil.make_archive(zipfile, 'zip', './emr_metrics')
     shutil.rmtree('./emr_metrics')
 
-    logger.info("Zip file of all cluster's metrics is created successfully in the same location")
+    logger.info(" %s compressed file of all cluster's metrics is created successfully in the same location." % zipfile)
     return {"message": "files created successfully in the same location", "status": "success"}
 
 
