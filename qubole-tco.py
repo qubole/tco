@@ -22,7 +22,7 @@ def cluster_details():
     logger = logging.getLogger('CloudwatchLog')
     logger.setLevel(logging.INFO)
     filelog = logging.FileHandler('Cloudwatch.log')
-    filelog.setLevel(logging.INFO)
+    filelog.setLevel(logging.DEBUG)
     consolelog = logging.StreamHandler()
     consolelog.setLevel(logging.INFO)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s')
@@ -73,14 +73,19 @@ def cluster_details():
                                             ClusterStates=['TERMINATED', 'TERMINATING', 'WAITING', 'RUNNING'])
             sleep(2)
             logger.debug("clusters" % response)
+            print (now - timedelta(days=60))
             for i in range(0, len(response['Clusters'])):
                 id = response['Clusters'][i]['Id']
 
                 cluster_state = response['Clusters'][i]['Status']['State']
-
+                print id
                 if cluster_state == 'WAITING' or cluster_state == 'RUNNING' or cluster_state == 'TERMINATING':
+                    print id
+                    print cluster_state
                     end = now_e
                 else:
+                    print id
+                    print cluster_state
                     end = response['Clusters'][i]['Status']['Timeline']['EndDateTime']
 
                 time_stamp = end - response['Clusters'][i]['Status']['Timeline']['CreationDateTime']
@@ -95,7 +100,7 @@ def cluster_details():
         logger.error(e)
         sys.exit(0)
 
-    logger.info("Selecting 10 longest running clusters........")
+    logger.info("Selecting at most 25 longest running clusters........")
     cluster_id_timestamp = sorted(cluster_id_timestamp, key=itemgetter('time_stamp'), reverse=True)
 
     if cluster_id_timestamp is None:
@@ -105,7 +110,7 @@ def cluster_details():
     # atleast 10 days
 
     for i in cluster_id_timestamp:
-        if count >= 10:
+        if count >= 25:
             break
         cluster_id.append(i['cluster_id'])
         cluster_id_region.append({'cluster_id': i['cluster_id'], 'region': i['region']})
@@ -121,7 +126,7 @@ def cluster_details():
         logger.info("Shortlisted clusters on the basis of number of time stamp and cluster's timestamp are - \n %s" % clusterid)
         # print "Shortlisted clusters on the basis of number of time stamp and cluster's timestamp are %s" % cluster_id
 
-    logger.info("Fetching cluster details of 10 shortlisted clusters, this will take some time"
+    logger.info("Fetching cluster details of shortlisted clusters, this will take some time"
                 ".....")
     for id in cluster_id_region:
         try:

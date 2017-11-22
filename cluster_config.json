@@ -1,0 +1,326 @@
+{
+    "clusters": [
+        {
+            "applications": [
+                {
+                    "Name": "Hadoop", 
+                    "Version": "2.7.3"
+                }, 
+                {
+                    "Name": "Hive", 
+                    "Version": "2.3.0"
+                }, 
+                {
+                    "Name": "Spark", 
+                    "Version": "2.2.0"
+                }
+            ], 
+            "cluster_id": "j-2U4DBNSN1S5EU", 
+            "master_instance_type": "m3.xlarge", 
+            "master_market_buy": "ON_DEMAND", 
+            "task_instance_type": "r3.xlarge", 
+            "task_market": "ON_DEMAND", 
+            "worker_instance_type": "r3.xlarge", 
+            "worker_market_buy": "ON_DEMAND"
+        }, 
+        {
+            "applications": [
+                {
+                    "Name": "Hadoop", 
+                    "Version": "2.7.3"
+                }, 
+                {
+                    "Name": "Hive", 
+                    "Version": "2.3.0"
+                }, 
+                {
+                    "Name": "Pig", 
+                    "Version": "0.17.0"
+                }, 
+                {
+                    "Name": "Hue", 
+                    "Version": "4.0.1"
+                }
+            ], 
+            "cluster_id": "j-11AMZDSYH8VI", 
+            "master_instance_type": "m3.xlarge", 
+            "master_market_buy": "ON_DEMAND", 
+            "task_instance_type": "r3.xlarge", 
+            "task_market": "ON_DEMAND", 
+            "worker_instance_type": "m3.xlarge", 
+            "worker_market_buy": "ON_DEMAND"
+        }, 
+        {
+            "applications": [
+                {
+                    "Name": "Hadoop", 
+                    "Version": "2.7.3"
+                }, 
+                {
+                    "Name": "Hive", 
+                    "Version": "2.3.0"
+                }, 
+                {
+                    "Name": "Spark", 
+                    "Version": "2.2.0"
+                }
+            ], 
+            "cluster_id": "j-1WCWSPA7WI6MR", 
+            "master_instance_type": "m3.xlarge", 
+            "master_market_buy": "ON_DEMAND", 
+            "task_instance_type": "r3.xlarge", 
+            "task_market": "ON_DEMAND", 
+            "worker_instance_type": "r3.xlarge", 
+            "worker_market_buy": "ON_DEMAND"
+        }, 
+        {
+            "applications": [
+                {
+                    "Name": "Hadoop", 
+                    "Version": "2.7.3"
+                }, 
+                {
+                    "Name": "Hive", 
+                    "Version": "2.3.0"
+                }, 
+                {
+                    "Name": "Pig", 
+                    "Version": "0.17.0"
+                }, 
+                {
+                    "Name": "Hue", 
+                    "Version": "4.0.1"
+                }
+            ], 
+            "cluster_id": "j-2BVYFA0HYUENU", 
+            "master_instance_type": "m3.2xlarge", 
+            "master_market_buy": "ON_DEMAND", 
+            "task_instance_type": "r3.xlarge", 
+            "task_market": "ON_DEMAND", 
+            "worker_instance_type": "m3.2xlarge", 
+            "worker_market_buy": "ON_DEMAND"
+        }, 
+        {
+            "applications": [
+                {
+                    "Name": "Hadoop", 
+                    "Version": "2.7.3"
+                }, 
+                {
+                    "Name": "Hive", 
+                    "Version": "2.3.0"
+                }, 
+                {
+                    "Name": "Pig", 
+                    "Version": "0.17.0"
+                }, 
+                {
+                    "Name": "Hue", 
+                    "Version": "4.0.1"
+                }
+            ], 
+            "cluster_id": "j-GDW6LNSC5E2H", 
+            "master_instance_type": "m3.2xlarge", 
+            "master_market_buy": "ON_DEMAND", 
+            "task_instance_type": "r3.xlarge", 
+            "task_market": "ON_DEMAND", 
+            "worker_instance_type": "m3.2xlarge", 
+            "worker_market_buy": "ON_DEMAND"
+        }, 
+        {
+            "applications": [
+                {
+                    "Name": "Ganglia", 
+                    "Version": "3.7.2"
+                }, 
+                {
+                    "Name": "Hadoop", 
+                    "Version": "2.7.3"
+                }, 
+                {
+                    "Name": "Hive", 
+                    "Version": "2.3.0"
+                }, 
+                {
+                    "Name": "Hue", 
+                    "Version": "4.0.1"
+                }, 
+                {
+                    "Name": "Mahout", 
+                    "Version": "0.13.0"
+                }, 
+                {
+                    "Name": "Pig", 
+                    "Version": "0.17.0"
+                }, 
+                {
+                    "Name": "Tez", 
+                    "Version": "0.8.4"
+                }
+            ], 
+            "cluster_id": "j-3A2MND3EZPPR4", 
+            "master_instance_type": "r3.2xlarge", 
+            "master_market_buy": "ON_DEMAND", 
+            "task_instance_type": "r3.xlarge", 
+            "task_market": "ON_DEMAND", 
+            "worker_instance_type": "r3.2xlarge", 
+            "worker_market_buy": "ON_DEMAND"
+        }, 
+        {
+            "applications": [
+                {
+                    "Name": "Ganglia", 
+                    "Version": "3.7.2"
+                }, 
+                {
+                    "Name": "Hadoop", 
+                    "Version": "2.7.3"
+                }, 
+                {
+                    "Name": "Hive", 
+                    "Version": "2.3.0"
+                }, 
+                {
+                    "Name": "Hue", 
+                    "Version": "4.0.1"
+                }, 
+                {
+                    "Name": "Mahout", 
+                    "Version": "0.13.0"
+                }, 
+                {
+                    "Name": "Pig", 
+                    "Version": "0.17.0"
+                }, 
+                {
+                    "Name": "Tez", 
+                    "Version": "0.8.4"
+                }
+            ], 
+            "cluster_id": "j-21224X4EO78CQ", 
+            "master_instance_type": "r3.2xlarge", 
+            "master_market_buy": "ON_DEMAND", 
+            "task_instance_type": "r3.xlarge", 
+            "task_market": "ON_DEMAND", 
+            "worker_instance_type": "r3.2xlarge", 
+            "worker_market_buy": "ON_DEMAND"
+        }, 
+        {
+            "applications": [
+                {
+                    "Name": "Presto", 
+                    "Version": "0.170"
+                }
+            ], 
+            "cluster_id": "j-KL9T7G14RVKX", 
+            "master_instance_type": "r3.2xlarge", 
+            "master_market_buy": "ON_DEMAND", 
+            "task_instance_type": "r3.xlarge", 
+            "task_market": "ON_DEMAND", 
+            "worker_instance_type": "r3.2xlarge", 
+            "worker_market_buy": "ON_DEMAND"
+        }, 
+        {
+            "applications": [
+                {
+                    "Name": "Presto", 
+                    "Version": "0.170"
+                }
+            ], 
+            "cluster_id": "j-1SY1WBNFYMTHJ", 
+            "master_instance_type": "r3.2xlarge", 
+            "master_market_buy": "ON_DEMAND", 
+            "task_instance_type": "r3.xlarge", 
+            "task_market": "ON_DEMAND", 
+            "worker_instance_type": "r3.2xlarge", 
+            "worker_market_buy": "ON_DEMAND"
+        }, 
+        {
+            "applications": [
+                {
+                    "Name": "Hadoop", 
+                    "Version": "2.7.3"
+                }, 
+                {
+                    "Name": "Hive", 
+                    "Version": "2.3.1"
+                }, 
+                {
+                    "Name": "Pig", 
+                    "Version": "0.17.0"
+                }, 
+                {
+                    "Name": "Hue", 
+                    "Version": "4.0.1"
+                }
+            ], 
+            "cluster_id": "j-29DLASYSHDDD", 
+            "master_instance_type": "m3.xlarge", 
+            "master_market_buy": "ON_DEMAND", 
+            "task_instance_type": "r3.xlarge", 
+            "task_market": "ON_DEMAND", 
+            "worker_instance_type": "r3.xlarge", 
+            "worker_market_buy": "ON_DEMAND"
+        }, 
+        {
+            "applications": [
+                {
+                    "Name": "Presto", 
+                    "Version": "0.170"
+                }
+            ], 
+            "cluster_id": "j-3RGI90N8GFBF0", 
+            "master_instance_type": "r3.2xlarge", 
+            "master_market_buy": "ON_DEMAND", 
+            "task_instance_type": "r3.xlarge", 
+            "task_market": "ON_DEMAND", 
+            "worker_instance_type": "r3.2xlarge", 
+            "worker_market_buy": "ON_DEMAND"
+        }, 
+        {
+            "applications": [
+                {
+                    "Name": "Presto", 
+                    "Version": "0.170"
+                }
+            ], 
+            "cluster_id": "j-2WKFGEAENTIWX", 
+            "master_instance_type": "r3.4xlarge", 
+            "master_market_buy": "ON_DEMAND", 
+            "task_instance_type": "r3.xlarge", 
+            "task_market": "ON_DEMAND", 
+            "worker_instance_type": "r3.4xlarge", 
+            "worker_market_buy": "ON_DEMAND"
+        }, 
+        {
+            "applications": [
+                {
+                    "Name": "Presto", 
+                    "Version": "0.170"
+                }
+            ], 
+            "cluster_id": "j-18LSGHCPWDDVV", 
+            "master_instance_type": "r3.4xlarge", 
+            "master_market_buy": "ON_DEMAND", 
+            "task_instance_type": "r3.xlarge", 
+            "task_market": "ON_DEMAND", 
+            "worker_instance_type": "r3.4xlarge", 
+            "worker_market_buy": "ON_DEMAND"
+        }, 
+        {
+            "applications": [
+                {
+                    "Name": "Presto", 
+                    "Version": "0.170"
+                }
+            ], 
+            "cluster_id": "j-89O5N2685RZ0", 
+            "master_instance_type": "m3.xlarge", 
+            "master_market_buy": "ON_DEMAND", 
+            "task_instance_type": "r3.xlarge", 
+            "task_market": "ON_DEMAND", 
+            "worker_instance_type": "m3.xlarge", 
+            "worker_market_buy": "ON_DEMAND"
+        }
+    ]
+}
