@@ -80,7 +80,7 @@ def cluster_details():
         for region in aws_regions:
             client = boto3.client('emr', aws_access_key_id=access_key, aws_secret_access_key=secret_key,
                                   region_name=region)
-            response = client.list_clusters(CreatedAfter=(now - timedelta(days=1)),
+            response = client.list_clusters(CreatedAfter=(now - timedelta(days=60)),
                                             CreatedBefore=datetime(now.year, now.month, now.day),
                                             ClusterStates=['TERMINATED', 'TERMINATING', 'WAITING', 'RUNNING'])
             sleep(2)
@@ -126,7 +126,7 @@ def cluster_details():
         count = count + 1
 
     # cluster_id_region.append({'cluster_id': "j-XR0D9R882WNT", 'region': "us-east-1"})
-    # cluster_id_region.append({'cluster_id': "j-25J5OLXR1WP4S", 'region': "us-east-1"})
+    #cluster_id_region.append({'cluster_id': "j-33O3WIISWB0OS", 'region': "us-east-1"})
     if len(cluster_id_region) == 0:
         logger.error("You don't have any large cluster i.e cluster of atleast 10 nodes")
         # print "You don't have any large cluster i.e cluster of atleast 10 nodes"
