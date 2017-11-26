@@ -50,9 +50,20 @@ def cluster_details():
     master_instance_type = None
     worker_instance_type = None
     task_instance_type = None
+    requested_worker_count = None
     master_market = None
     task_market = None
     worker_market = None
+    worker_node_detail = []
+    task_node_details = []
+    task_bid_price = None
+    worker_bid_price = None
+    master_bid_price = None
+    t_max_nodes = None
+    t_min_nodes = None
+    w_max_nodes = None
+    w_min_nodes = None
+    RequestedTaskCount = None
     count = 0
 
     aws_regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2', 'ap-south-1', 'ap-northeast-2', 'ap-southeast-1',
@@ -67,13 +78,14 @@ def cluster_details():
     try:
         logger.info("Fetching cluster id's across all AWS regions.......")
         for region in aws_regions:
-            client = boto3.client('emr', aws_access_key_id=access_key, aws_secret_access_key=secret_key, region_name=region)
-            response = client.list_clusters(CreatedAfter=(now - timedelta(days=60)),
+            client = boto3.client('emr', aws_access_key_id=access_key, aws_secret_access_key=secret_key,
+                                  region_name=region)
+            response = client.list_clusters(CreatedAfter=(now - timedelta(days=1)),
                                             CreatedBefore=datetime(now.year, now.month, now.day),
                                             ClusterStates=['TERMINATED', 'TERMINATING', 'WAITING', 'RUNNING'])
             sleep(2)
             logger.debug("clusters" % response)
-            print (now - timedelta(days=60))
+            # print (now - timedelta(days=60))
             for i in range(0, len(response['Clusters'])):
                 id = response['Clusters'][i]['Id']
 
@@ -106,16 +118,15 @@ def cluster_details():
     if cluster_id_timestamp is None:
         logger.error("No cluster found in aws emr account corresponding to given access tokens")
 
-    # change the logic of ordering the cluster i.e order on the basis of largest size cluster and timestamp must be
-    # atleast 10 days
-
     for i in cluster_id_timestamp:
         if count >= 25:
             break
         cluster_id.append(i['cluster_id'])
         cluster_id_region.append({'cluster_id': i['cluster_id'], 'region': i['region']})
         count = count + 1
-        # print info message to output the shortlisted clusters
+
+    cluster_id_region.append({'cluster_id': "j-XR0D9R882WNT", 'region': "us-east-1"})
+    # cluster_id_region.append({'cluster_id': "j-25J5OLXR1WP4S", 'region': "us-east-1"})
     if len(cluster_id_region) == 0:
         logger.error("You don't have any large cluster i.e cluster of atleast 10 nodes")
         # print "You don't have any large cluster i.e cluster of atleast 10 nodes"
@@ -123,7 +134,8 @@ def cluster_details():
 
     else:
         clusterid = ''.join(cluster_id)
-        logger.info("Shortlisted clusters on the basis of number of time stamp and cluster's timestamp are - \n %s" % clusterid)
+        logger.info(
+            "Shortlisted clusters on the basis of number of time stamp and cluster's timestamp are - \n %s" % clusterid)
         # print "Shortlisted clusters on the basis of number of time stamp and cluster's timestamp are %s" % cluster_id
 
     logger.info("Fetching cluster details of shortlisted clusters, this will take some time"
@@ -163,7 +175,8 @@ def cluster_details():
                     cluster_status['Cluster']['Status']['Timeline']['EndDateTime']
             logger.debug(mssg2)
 
-        cluster_id_region_time.append({'cluster_id': id['cluster_id'], 'region': id['region'], 's_time': s_time, 'e_time': e_time})
+        cluster_id_region_time.append(
+            {'cluster_id': id['cluster_id'], 'region': id['region'], 's_time': s_time, 'e_time': e_time})
 
         try:
             cluster_status = client.list_instance_groups(
@@ -179,25 +192,46 @@ def cluster_details():
 
         for i in range(0, len(cluster_status['InstanceGroups'])):
             if cluster_status['InstanceGroups'][i]['InstanceGroupType'] == 'MASTER':
+                if cluster_status['InstanceGroups'][i].has_key("AutoScalingPolicy"):
+                    master_bid_price = cluster_status['InstanceGroups'][i]["BidPrice"]
                 master_instance_type = cluster_status['InstanceGroups'][i]['InstanceType']
                 master_market = cluster_status['InstanceGroups'][i]['Market']
             elif cluster_status['InstanceGroups'][i]['InstanceGroupType'] == 'CORE':
+                if cluster_status['InstanceGroups'][i].has_key("BidPrice"):
+                    worker_bid_price = cluster_status['InstanceGroups'][i]["BidPrice"]
+                if cluster_status['InstanceGroups'][i].has_key("AutoScalingPolicy"):
+                    w_min_nodes = cluster_status['InstanceGroups'][i]['AutoScalingPolicy']['Constraints']['MinCapacity']
+                    w_max_nodes = cluster_status['InstanceGroups'][i]['AutoScalingPolicy']['Constraints']['MaxCapacity']
                 worker_instance_type = cluster_status['InstanceGroups'][i]['InstanceType']
                 worker_market = cluster_status['InstanceGroups'][i]['Market']
+                requested_worker_count = cluster_status['InstanceGroups'][i]['RequestedInstanceCount']
+                worker_node_detail.append({"RequestedWorkerCount": requested_worker_count, "MinCapacity": w_min_nodes,
+                                           "MaxCapacity": w_max_nodes, "WorkerInstanceType": worker_instance_type,
+                                           "WorkerMarketBuy": worker_market, "BidPrice": worker_bid_price})
             else:
+                if cluster_status['InstanceGroups'][i].has_key("AutoScalingPolicy"):
+                    t_min_nodes = cluster_status['InstanceGroups'][i]['AutoScalingPolicy']['Constraints']['MinCapacity']
+                    t_max_nodes = cluster_status['InstanceGroups'][i]['AutoScalingPolicy']['Constraints']['MaxCapacity']
+                if cluster_status['InstanceGroups'][i].has_key("BidPrice"):
+                    task_bid_price = cluster_status['InstanceGroups'][i]["BidPrice"]
+
                 task_instance_type = cluster_status['InstanceGroups'][i]['InstanceType']
                 task_market = cluster_status['InstanceGroups'][i]['Market']
+                RequestedTaskCount = cluster_status['InstanceGroups'][i]['RequestedInstanceCount']
+                task_node_details.append(
+                    {"RequestedTaskCount": RequestedTaskCount, "InstanceMarketBuy": task_market,
+                     "TaskInstanceType": task_instance_type, "MinCapacity": t_min_nodes,
+                     "MaxCapacity": t_max_nodes, "BidPrice": task_bid_price})
 
         cluster_node_details.get('clusters').append(
             {
                 "cluster_id": id['cluster_id'],
-                "master_instance_type": master_instance_type,
-                "master_market_buy": master_market,
-                "worker_instance_type": worker_instance_type,
-                "worker_market_buy": worker_market,
-                "task_instance_type": task_instance_type,
-                "task_market": task_market,
-                "applications": cluster_applications['Cluster']['Applications']
+                "Master_instance_type": master_instance_type,
+                "Master_market_buy": master_market,
+                "Maste_bid_price": master_bid_price,
+                "Worker_node_details": worker_node_detail,
+                "Task_nodes_detail": task_node_details,
+                "Applications": cluster_applications['Cluster']['Applications']
             })
     logger.info("All Cluster details are fetched!")
     logger.debug(cluster_node_details)
@@ -271,8 +305,8 @@ def cloudwatch_metric():
 
             logger.debug("MemoryAvailableMB Metrics obtained for cluster %s " % i['cluster_id'])
             logger.debug(response)
-            #response
-            #response = json.dumps(response, default=datetime_handler)
+            # response
+            # response = json.dumps(response, default=datetime_handler)
             file_name = dir + "/" + "MemoryAvailableMB_%s.ans" % (i['cluster_id'])
             if not os.path.exists(file_name):
                 with open(file_name, 'w') as f:
