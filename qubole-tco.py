@@ -125,7 +125,7 @@ def cluster_details():
         cluster_id_region.append({'cluster_id': i['cluster_id'], 'region': i['region']})
         count = count + 1
 
-    cluster_id_region.append({'cluster_id': "j-XR0D9R882WNT", 'region': "us-east-1"})
+    # cluster_id_region.append({'cluster_id': "j-XR0D9R882WNT", 'region': "us-east-1"})
     # cluster_id_region.append({'cluster_id': "j-25J5OLXR1WP4S", 'region': "us-east-1"})
     if len(cluster_id_region) == 0:
         logger.error("You don't have any large cluster i.e cluster of atleast 10 nodes")
