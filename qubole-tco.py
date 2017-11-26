@@ -7,7 +7,7 @@ import shutil
 import sys
 from datetime import datetime, timedelta
 from operator import itemgetter
-from time import sleep
+from time import sleep, gmtime, mktime, strptime, strftime
 
 import boto3
 import pytz
@@ -142,10 +142,11 @@ def cluster_details():
             sys.exit(0)
 
         cluster_status = stdout
-        s_time = datetime.strptime(str(cluster_status['Cluster']["Status"]["Timeline"]["CreationDateTime"]), '%Y-%m-%d '
-                                                                                                             '%H:%M'
-                                                                                                             ':%S.%f'
-                                                                                                             '+05:30')
+        # print "s_time", cluster_status['Cluster']["Status"]["Timeline"]["CreationDateTime"]
+        s_t = str(cluster_status['Cluster']["Status"]["Timeline"]["CreationDateTime"])
+        s_t = strftime("%Y-%m-%d %H:%M:%S", gmtime(mktime(strptime(s_t, "%Y-%m-%d %H:%M:%S.%f+05:30"))))
+        s_time = datetime.strptime(s_t, '%Y-%m-%d %H:%M:%S')
+        # print "s_time===", s_time
         mssg1 = "cluster_status['Cluster']['Status']['Timeline']['CreationDateTime'] = %s", \
                 cluster_status['Cluster']['Status']['Timeline']['CreationDateTime']
         logger.debug(mssg1)
@@ -154,9 +155,9 @@ def cluster_details():
             "State"] == "WAITING" or cluster_status['Cluster']["Status"]["State"] == "STARTING":
             e_time = 1
         else:
-            e_time = datetime.strptime(str(cluster_status['Cluster']["Status"]["Timeline"]["EndDateTime"]), '%Y-%m-%d '
-                                                                                                            '%H:%M:%S'
-                                                                                                            '.%f+05:30')
+            e_t = str(cluster_status['Cluster']["Status"]["Timeline"]["EndDateTime"])
+            e_t = strftime("%Y-%m-%d %H:%M:%S", gmtime(mktime(strptime(e_t, "%Y-%m-%d %H:%M:%S.%f+05:30"))))
+            e_time = datetime.strptime(e_t, '%Y-%m-%d %H:%M:%S')
 
             mssg2 = "cluster_status['Cluster']['Status']['Timeline']['EndDateTime'] = ", \
                     cluster_status['Cluster']['Status']['Timeline']['EndDateTime']
