@@ -158,7 +158,7 @@ def cluster_details():
         logger.debug(mssg1)
 
         if cluster_status['Cluster']["Status"]["State"] == "RUNNING" or cluster_status['Cluster']["Status"][
-            "State"] == "WAITING" or cluster_status['Cluster']["Status"]["State"] == "STARTING":
+            "State"] == "WAITING" or cluster_status['Cluster']["Status"]["State"] == "STARTING" or cluster_status['Cluster']["Status"]["State"] == "TERMINATING":
             e_time = 1
         else:
             e_t = str(cluster_status['Cluster']["Status"]["Timeline"]["EndDateTime"])
