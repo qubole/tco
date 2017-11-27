@@ -63,6 +63,8 @@ def cluster_details():
     t_min_nodes = None
     w_max_nodes = None
     w_min_nodes = None
+    w_autoscaling_status = None
+    t_autoscaling_status = None
     RequestedTaskCount = None
     count = 0
 
@@ -80,7 +82,7 @@ def cluster_details():
         for region in aws_regions:
             client = boto3.client('emr', aws_access_key_id=access_key, aws_secret_access_key=secret_key,
                                   region_name=region)
-            response = client.list_clusters(CreatedAfter=(now - timedelta(days=60)),
+            response = client.list_clusters(CreatedAfter=(now - timedelta(days=1)),
                                             CreatedBefore=datetime(now.year, now.month, now.day),
                                             ClusterStates=['TERMINATED', 'TERMINATING', 'WAITING', 'RUNNING'])
             sleep(2)
@@ -125,8 +127,9 @@ def cluster_details():
         cluster_id_region.append({'cluster_id': i['cluster_id'], 'region': i['region']})
         count = count + 1
 
-    # cluster_id_region.append({'cluster_id': "j-XR0D9R882WNT", 'region': "us-east-1"})
-    #cluster_id_region.append({'cluster_id': "j-33O3WIISWB0OS", 'region': "us-east-1"})
+    # cluster_id_region.append({'cluster_id': "j-3IWHH06350PBC", 'region': "us-east-1"})
+    # cluster_id_region.append({'cluster_id': "j-33O3WIISWB0OS", 'region': "us-east-1"})
+    cluster_id_region.append({'cluster_id': "j-1RQVW7P1NDEFA", 'region': "us-east-1"})
     if len(cluster_id_region) == 0:
         logger.error("You don't have any large cluster i.e cluster of atleast 10 nodes")
         # print "You don't have any large cluster i.e cluster of atleast 10 nodes"
@@ -164,7 +167,7 @@ def cluster_details():
         logger.debug(mssg1)
 
         if cluster_status['Cluster']["Status"]["State"] == "RUNNING" or cluster_status['Cluster']["Status"][
-            "State"] == "WAITING" or cluster_status['Cluster']["Status"]["State"] == "STARTING":
+            "State"] == "WAITING" or cluster_status['Cluster']["Status"]["State"] == "STARTING" or cluster_status['Cluster']["Status"]["State"] == "TERMINATING":
             e_time = 1
         else:
             e_t = str(cluster_status['Cluster']["Status"]["Timeline"]["EndDateTime"])
@@ -200,6 +203,7 @@ def cluster_details():
                 if cluster_status['InstanceGroups'][i].has_key("BidPrice"):
                     worker_bid_price = cluster_status['InstanceGroups'][i]["BidPrice"]
                 if cluster_status['InstanceGroups'][i].has_key("AutoScalingPolicy"):
+                    w_autoscaling_status = cluster_status['InstanceGroups'][i]['AutoScalingPolicy']['Status']['State']
                     w_min_nodes = cluster_status['InstanceGroups'][i]['AutoScalingPolicy']['Constraints']['MinCapacity']
                     w_max_nodes = cluster_status['InstanceGroups'][i]['AutoScalingPolicy']['Constraints']['MaxCapacity']
                 worker_instance_type = cluster_status['InstanceGroups'][i]['InstanceType']
@@ -207,9 +211,11 @@ def cluster_details():
                 requested_worker_count = cluster_status['InstanceGroups'][i]['RequestedInstanceCount']
                 worker_node_detail.append({"RequestedWorkerCount": requested_worker_count, "MinCapacity": w_min_nodes,
                                            "MaxCapacity": w_max_nodes, "WorkerInstanceType": worker_instance_type,
-                                           "WorkerMarketBuy": worker_market, "BidPrice": worker_bid_price})
+                                           "WorkerMarketBuy": worker_market, "BidPrice": worker_bid_price,
+                                           "Autoscaling_Status": w_autoscaling_status})
             else:
                 if cluster_status['InstanceGroups'][i].has_key("AutoScalingPolicy"):
+                    t_autoscaling_status = cluster_status['InstanceGroups'][i]['AutoScalingPolicy']['Status']['State']
                     t_min_nodes = cluster_status['InstanceGroups'][i]['AutoScalingPolicy']['Constraints']['MinCapacity']
                     t_max_nodes = cluster_status['InstanceGroups'][i]['AutoScalingPolicy']['Constraints']['MaxCapacity']
                 if cluster_status['InstanceGroups'][i].has_key("BidPrice"):
@@ -221,7 +227,7 @@ def cluster_details():
                 task_node_details.append(
                     {"RequestedTaskCount": RequestedTaskCount, "InstanceMarketBuy": task_market,
                      "TaskInstanceType": task_instance_type, "MinCapacity": t_min_nodes,
-                     "MaxCapacity": t_max_nodes, "BidPrice": task_bid_price})
+                     "MaxCapacity": t_max_nodes, "BidPrice": task_bid_price,"Autoscaling_Status": t_autoscaling_status})
 
         cluster_node_details.get('clusters').append(
             {
@@ -231,7 +237,8 @@ def cluster_details():
                 "Maste_bid_price": master_bid_price,
                 "Worker_node_details": worker_node_detail,
                 "Task_nodes_detail": task_node_details,
-                "Applications": cluster_applications['Cluster']['Applications']
+                "Applications": cluster_applications['Cluster']['Applications'],
+                "Cluster_State": cluster_applications['Cluster']['Status']['State']
             })
     logger.info("All Cluster details are fetched!")
     logger.debug(cluster_node_details)
