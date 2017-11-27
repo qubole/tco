@@ -229,13 +229,13 @@ def cluster_details():
         cluster_node_details.get('clusters').append(
             {
                 "cluster_id": id['cluster_id'],
-                "Master_instance_type": master_instance_type,
-                "Master_market_buy": master_market,
-                "Maste_bid_price": master_bid_price,
-                "Worker_node_details": worker_node_detail,
-                "Task_nodes_detail": task_node_details,
-                "Applications": cluster_applications['Cluster']['Applications'],
-                "Cluster_State": cluster_applications['Cluster']['Status']['State']
+                "master_instance_type": master_instance_type,
+                "master_market_buy": master_market,
+                "master_bid_price": master_bid_price,
+                "worker_node_details": worker_node_detail,
+                "task_nodes_detail": task_node_details,
+                "applications": cluster_applications['Cluster']['Applications'],
+                "cluster_State": cluster_applications['Cluster']['Status']['State']
             })
     logger.info("All Cluster details are fetched!")
     logger.debug(cluster_node_details)
