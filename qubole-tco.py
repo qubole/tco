@@ -237,6 +237,8 @@ def cluster_details():
                 "applications": cluster_applications['Cluster']['Applications'],
                 "cluster_State": cluster_applications['Cluster']['Status']['State']
             })
+        task_node_details = []
+        worker_node_detail = []
     logger.info("All Cluster details are fetched!")
     logger.debug(cluster_node_details)
     return access_key, secret_key, cluster_node_details, cluster_id_region_time
