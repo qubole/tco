@@ -206,10 +206,10 @@ def cluster_details():
                 worker_instance_type = cluster_status['InstanceGroups'][i]['InstanceType']
                 worker_market = cluster_status['InstanceGroups'][i]['Market']
                 requested_worker_count = cluster_status['InstanceGroups'][i]['RequestedInstanceCount']
-                worker_node_detail.append({"RequestedWorkerCount": requested_worker_count, "MinCapacity": w_min_nodes,
-                                           "MaxCapacity": w_max_nodes, "WorkerInstanceType": worker_instance_type,
-                                           "WorkerMarketBuy": worker_market, "BidPrice": worker_bid_price,
-                                           "Autoscaling_Status": w_autoscaling_status})
+                worker_node_detail.append({"requested_worker_count": requested_worker_count, "min_capacity": w_min_nodes,
+                                           "max_capacity": w_max_nodes, "worker_instance_type": worker_instance_type,
+                                           "instance_market_buy": worker_market, "bid_price": worker_bid_price,
+                                           "autoscaling_status": w_autoscaling_status})
             else:
                 if cluster_status['InstanceGroups'][i].has_key("AutoScalingPolicy"):
                     t_autoscaling_status = cluster_status['InstanceGroups'][i]['AutoScalingPolicy']['Status']['State']
@@ -222,9 +222,9 @@ def cluster_details():
                 task_market = cluster_status['InstanceGroups'][i]['Market']
                 RequestedTaskCount = cluster_status['InstanceGroups'][i]['RequestedInstanceCount']
                 task_node_details.append(
-                    {"RequestedTaskCount": RequestedTaskCount, "InstanceMarketBuy": task_market,
-                     "TaskInstanceType": task_instance_type, "MinCapacity": t_min_nodes,
-                     "MaxCapacity": t_max_nodes, "BidPrice": task_bid_price,"Autoscaling_Status": t_autoscaling_status})
+                    {"requested_task_count": RequestedTaskCount, "instance_market_buy": task_market,
+                     "task_instance_type": task_instance_type, "min_capacity": t_min_nodes,
+                     "max_capacity": t_max_nodes, "bid_price": task_bid_price,"autoscaling_status": t_autoscaling_status})
 
         cluster_node_details.get('clusters').append(
             {
