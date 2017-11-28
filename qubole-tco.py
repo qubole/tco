@@ -144,14 +144,15 @@ def cluster_details():
         cluster_status = stdout
         # print "s_time", cluster_status['Cluster']["Status"]["Timeline"]["CreationDateTime"]
         s_t = str(cluster_status['Cluster']["Status"]["Timeline"]["CreationDateTime"])
-        if '+' in s_t:
-            zone_diff = '+' + s_t.split('+')[1]
-        elif '-' in s_t:
-            zone_diff = '-' + s_t.split('-')[1]
-        else:
-            zone_diff = ""
-        date_format = "%Y-%m-%d %H:%M:%S.%f"+zone_diff
-        s_t = strftime("%Y-%m-%d %H:%M:%S", gmtime(mktime(strptime(s_t, date_format))))
+        # if '+' in s_t:
+        #     s_t = s_t.split('+')[0]
+        # elif '-' in s_t:
+        #     s_t = s_t.split('-')[0]
+        # else:
+        #     zone_diff = ""
+        s_t = s_t.split('.')[0]
+        # date_format = "%Y-%m-%d %H:%M:%S"+s_t
+        # s_t = strftime("%Y-%m-%d %H:%M:%S", gmtime(mktime(strptime(s_t, "%Y-%m-%d %H:%M:%S"))))
         s_time = datetime.strptime(s_t, '%Y-%m-%d %H:%M:%S')
         mssg1 = "cluster_status['Cluster']['Status']['Timeline']['CreationDateTime'] = %s", \
                 cluster_status['Cluster']['Status']['Timeline']['CreationDateTime']
@@ -162,8 +163,9 @@ def cluster_details():
             e_time = 1
         else:
             e_t = str(cluster_status['Cluster']["Status"]["Timeline"]["EndDateTime"])
-            date_format = "%Y-%m-%d %H:%M:%S.%f" + zone_diff
-            e_t = strftime("%Y-%m-%d %H:%M:%S", gmtime(mktime(strptime(e_t, date_format))))
+            e_t = e_t.split('.')[0]
+            # date_format = "%Y-%m-%d %H:%M:%S" + e_t
+            # e_t = strftime("%Y-%m-%d %H:%M:%S", gmtime(mktime(strptime(e_t, "%Y-%m-%d %H:%M:%S"))))
             e_time = datetime.strptime(e_t, '%Y-%m-%d %H:%M:%S')
 
             mssg2 = "cluster_status['Cluster']['Status']['Timeline']['EndDateTime'] = ", \
