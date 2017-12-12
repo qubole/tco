@@ -199,11 +199,11 @@ def cluster_details():
             except ClientError as e:
                 print e
                 logger.error(e)
-            for i in range(0, len(cluster_status['InstanceGroups'])):
-                del cluster_status['InstanceGroups'][i]['Status']['Timeline']
+            for i in range(0, len(cluster_status['InstanceFleets'])):
+                del cluster_status['InstanceFleets'][i]['Status']['Timeline']
             cwd = os.getcwd() + "/emr_metrics"
             dir = cwd + "/" + id['cluster_id']
-            content = json.dumps(cluster_status,indent=4, sort_keys=True)
+            content = json.dumps(cluster_status, indent=4, sort_keys=True)
             if not os.path.exists(dir):
                 os.makedirs(dir)
             with open(dir+"/instance_fleet.json", "w+") as f:
