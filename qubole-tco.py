@@ -16,7 +16,7 @@ from botocore.exceptions import ClientError
 
 # Follow these https://github.com/qubole/tco/blob/master/README.md instructions before running this script
 # access and secrete keys must be given as an input for eg:-
-# python cloudwatch_automate.py --access_key=<accesskey> --secret_key=<secret_key>
+# python cloudwatch_automate.py --access-key=<accesskey> --secret-key=<secret_key>
 
 def cluster_details():
     logger = logging.getLogger('CloudwatchLog')
@@ -46,26 +46,6 @@ def cluster_details():
     results = parser.parse_args()
     access_key = results.access_key
     secret_key = results.secret_key
-    cluster_node_details = {'clusters': []}
-    master_instance_type = None
-    worker_instance_type = None
-    task_instance_type = None
-    requested_worker_count = None
-    master_market = None
-    task_market = None
-    worker_market = None
-    worker_node_detail = []
-    task_node_details = []
-    task_bid_price = None
-    worker_bid_price = None
-    master_bid_price = None
-    t_max_nodes = None
-    t_min_nodes = None
-    w_max_nodes = None
-    w_min_nodes = None
-    w_autoscaling_status = None
-    t_autoscaling_status = None
-    RequestedTaskCount = None
     count = 0
 
     aws_regions = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2', 'ap-south-1', 'ap-northeast-2', 'ap-southeast-1',
@@ -158,13 +138,14 @@ def cluster_details():
         s_t = str(cluster_status['Cluster']["Status"]["Timeline"]["CreationDateTime"])
         s_t = strftime("%Y-%m-%d %H:%M:%S", gmtime(mktime(strptime(s_t, "%Y-%m-%d %H:%M:%S.%f+05:30"))))
         s_time = datetime.strptime(s_t, '%Y-%m-%d %H:%M:%S')
-        # print "s_time===", s_time
+
         mssg1 = "cluster_status['Cluster']['Status']['Timeline']['CreationDateTime'] = %s", \
                 cluster_status['Cluster']['Status']['Timeline']['CreationDateTime']
         logger.debug(mssg1)
 
         if cluster_status['Cluster']["Status"]["State"] == "RUNNING" or cluster_status['Cluster']["Status"][
-            "State"] == "WAITING" or cluster_status['Cluster']["Status"]["State"] == "STARTING" or cluster_status['Cluster']["Status"]["State"] == "TERMINATING":
+            "State"] == "WAITING" or cluster_status['Cluster']["Status"]["State"] == "STARTING" or \
+                        cluster_status['Cluster']["Status"]["State"] == "TERMINATING":
             e_time = 1
         else:
             e_t = str(cluster_status['Cluster']["Status"]["Timeline"]["EndDateTime"])
@@ -179,73 +160,67 @@ def cluster_details():
             {'cluster_id': id['cluster_id'], 'region': id['region'], 's_time': s_time, 'e_time': e_time})
 
         try:
-            cluster_status = client.list_instance_groups(
-                ClusterId=id['cluster_id']
-            )
 
-            cluster_applications = client.describe_cluster(
-                ClusterId=id['cluster_id']
-            )
+            cluster_applications = client.describe_cluster(ClusterId=id['cluster_id'])
+
         except ClientError as e:
             print e
             logger.error(e)
+        cwd = os.getcwd() + "/emr_metrics"
+        dir = cwd + "/" + id['cluster_id']
+        del cluster_applications["Cluster"]["Status"]["Timeline"]
+        content = json.dumps(cluster_applications, indent=4, sort_keys=True)
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+        with open(dir+"/describe_cluster.json", "w+") as f:
+            f.write(content)
 
-        for i in range(0, len(cluster_status['InstanceGroups'])):
-            if cluster_status['InstanceGroups'][i]['InstanceGroupType'] == 'MASTER':
-                if cluster_status['InstanceGroups'][i].has_key("AutoScalingPolicy"):
-                    master_bid_price = cluster_status['InstanceGroups'][i]["BidPrice"]
-                master_instance_type = cluster_status['InstanceGroups'][i]['InstanceType']
-                master_market = cluster_status['InstanceGroups'][i]['Market']
-            elif cluster_status['InstanceGroups'][i]['InstanceGroupType'] == 'CORE':
-                if cluster_status['InstanceGroups'][i].has_key("BidPrice"):
-                    worker_bid_price = cluster_status['InstanceGroups'][i]["BidPrice"]
-                if cluster_status['InstanceGroups'][i].has_key("AutoScalingPolicy"):
-                    w_autoscaling_status = cluster_status['InstanceGroups'][i]['AutoScalingPolicy']['Status']['State']
-                    w_min_nodes = cluster_status['InstanceGroups'][i]['AutoScalingPolicy']['Constraints']['MinCapacity']
-                    w_max_nodes = cluster_status['InstanceGroups'][i]['AutoScalingPolicy']['Constraints']['MaxCapacity']
-                worker_instance_type = cluster_status['InstanceGroups'][i]['InstanceType']
-                worker_market = cluster_status['InstanceGroups'][i]['Market']
-                requested_worker_count = cluster_status['InstanceGroups'][i]['RequestedInstanceCount']
-                worker_node_detail.append({"requested_worker_count": requested_worker_count, "min_capacity": w_min_nodes,
-                                           "max_capacity": w_max_nodes, "worker_instance_type": worker_instance_type,
-                                           "instance_market_buy": worker_market, "bid_price": worker_bid_price,
-                                           "autoscaling_status": w_autoscaling_status})
-            else:
-                if cluster_status['InstanceGroups'][i].has_key("AutoScalingPolicy"):
-                    t_autoscaling_status = cluster_status['InstanceGroups'][i]['AutoScalingPolicy']['Status']['State']
-                    t_min_nodes = cluster_status['InstanceGroups'][i]['AutoScalingPolicy']['Constraints']['MinCapacity']
-                    t_max_nodes = cluster_status['InstanceGroups'][i]['AutoScalingPolicy']['Constraints']['MaxCapacity']
-                if cluster_status['InstanceGroups'][i].has_key("BidPrice"):
-                    task_bid_price = cluster_status['InstanceGroups'][i]["BidPrice"]
+        if cluster_applications['Cluster']['InstanceCollectionType'] == "INSTANCE_GROUP":
+            try:
+                cluster_status = client.list_instance_groups(ClusterId=id['cluster_id'])
+            except ClientError as e:
+                print e
+                logger.error(e)
 
-                task_instance_type = cluster_status['InstanceGroups'][i]['InstanceType']
-                task_market = cluster_status['InstanceGroups'][i]['Market']
-                RequestedTaskCount = cluster_status['InstanceGroups'][i]['RequestedInstanceCount']
-                task_node_details.append(
-                    {"requested_task_count": RequestedTaskCount, "instance_market_buy": task_market,
-                     "task_instance_type": task_instance_type, "min_capacity": t_min_nodes,
-                     "max_capacity": t_max_nodes, "bid_price": task_bid_price,"autoscaling_status": t_autoscaling_status})
+            cwd = os.getcwd() + "/emr_metrics"
+            dir = cwd + "/" + id['cluster_id']
+            for i in range(0, len(cluster_status['InstanceGroups'])):
+                del cluster_status['InstanceGroups'][i]['Status']['Timeline']
+            content = json.dumps(cluster_status, indent=4, sort_keys=True)
+            if not os.path.exists(dir):
+                os.makedirs(dir)
+            with open(dir+"/instance_group.json", "w+") as f:
+                f.write(content)
 
-        cluster_node_details.get('clusters').append(
-            {
-                "cluster_id": id['cluster_id'],
-                "master_instance_type": master_instance_type,
-                "master_market_buy": master_market,
-                "master_bid_price": master_bid_price,
-                "worker_node_details": worker_node_detail,
-                "task_nodes_detail": task_node_details,
-                "applications": cluster_applications['Cluster']['Applications'],
-                "cluster_State": cluster_applications['Cluster']['Status']['State']
-            })
-        task_node_details = []
-        worker_node_detail = []
+        else:
+            try:
+                cluster_status = client.list_instance_fleets(ClusterId=id['cluster_id'])
+
+            except ClientError as e:
+                print e
+                logger.error(e)
+            for i in range(0, len(cluster_status['InstanceGroups'])):
+                del cluster_status['InstanceGroups'][i]['Status']['Timeline']
+            cwd = os.getcwd() + "/emr_metrics"
+            dir = cwd + "/" + id['cluster_id']
+            content = json.dumps(cluster_status,indent=4, sort_keys=True)
+            if not os.path.exists(dir):
+                os.makedirs(dir)
+            with open(dir+"/instance_fleet.json", "w+") as f:
+                f.write(content)
+
     logger.info("All Cluster details are fetched!")
-    logger.debug(cluster_node_details)
-    return access_key, secret_key, cluster_node_details, cluster_id_region_time
+    # logger.debug(cluster_node_details)
+    return access_key, secret_key, cluster_id_region_time
 
 
 def cloudwatch_metric():
-    access_key, secret_key, cluster_node_details, cluster_id_region_time = cluster_details()
+    top_dir = "emr_metrics"
+    top_cwd = os.getcwd() + "/" + top_dir
+    if not os.path.exists(top_cwd):
+        os.makedirs(top_cwd)
+    access_key, secret_key, cluster_id_region_time = cluster_details()
+
     logger = logging.getLogger('CloudwatchLog')
     logger.setLevel(logging.INFO)
     filelog = logging.FileHandler('Cloudwatch.log')
@@ -260,17 +235,9 @@ def cloudwatch_metric():
     logger.addHandler(filelog)
     logger.info("Now fetching cloudwatch metrics of selected 10 clusters....")
 
-    top_dir = "emr_metrics"
-    top_cwd = os.getcwd() + "/" + top_dir
-    if not os.path.exists(top_cwd):
-        os.makedirs(top_cwd)
-    content = json.dumps(cluster_node_details, indent=4, sort_keys=True)
-    file = top_cwd + "/cluster_config.json"
-    with open(file, 'w') as f:
-        f.write(content)
 
-    if not os.path.exists(top_dir):
-        os.makedirs(top_dir)
+    # if not os.path.exists(top_dir):
+    #     os.makedirs(top_dir)
 
     for i in cluster_id_region_time:
         try:
@@ -280,11 +247,11 @@ def cloudwatch_metric():
             logger.error("Please check your secret key and access key")
             sys.exit(0)
 
-        cwd = os.getcwd() + "/" + top_dir
-        dir = cwd + "/" + i['cluster_id']
-        if not os.path.exists(dir):
-            os.makedirs(dir)
-
+        # cwd = os.getcwd() + "/" + top_dir
+        # dir = cwd + "/" + i['cluster_id']
+        # if not os.path.exists(dir):
+        #     os.makedirs(dir)
+        print i
         endTime = None
         startTime = i['s_time']
         days_left = sys.maxint
@@ -313,9 +280,11 @@ def cloudwatch_metric():
             logger.debug(response)
             # response
             # response = json.dumps(response, default=datetime_handler)
-            file_name = dir + "/" + "MemoryAvailableMB_%s.ans" % (i['cluster_id'])
+            # cwd = os.getcwd() + "/emr_metrics"
+            # dir = cwd + "/" + i['cluster_id']
+            file_name = "emr_metrics/" + i['cluster_id'] + "/" + "MemoryAvailableMB_%s.ans" % (i['cluster_id'])
             if not os.path.exists(file_name):
-                with open(file_name, 'w') as f:
+                with open(file_name, 'w+') as f:
                     f.write(str(response))
             else:
                 with open(file_name, 'a') as f:
@@ -341,9 +310,9 @@ def cloudwatch_metric():
             logger.debug("MemoryTotalMB Metrics obtained for cluster %s " % i['cluster_id'])
             logger.debug(response)
 
-            file_name = dir + "/" + "MemoryTotalMB_%s.ans" % (i['cluster_id'])
+            file_name = "emr_metrics/" + i['cluster_id'] + "/" + "MemoryTotalMB_%s.ans" % (i['cluster_id'])
             if not os.path.exists(file_name):
-                with open(file_name, 'w') as f:
+                with open(file_name, 'w+') as f:
                     f.write(str(response))
             else:
                 with open(file_name, 'a') as f:
@@ -369,9 +338,9 @@ def cloudwatch_metric():
             logger.debug("TaskNodesRunning Metrics obtained for cluster %s " % i['cluster_id'])
             logger.debug(response)
 
-            file_name = dir + "/" + "TaskNodesRunning_%s.ans" % (i['cluster_id'])
+            file_name = "emr_metrics/" + i['cluster_id'] + "/" + "TaskNodesRunning_%s.ans" % (i['cluster_id'])
             if not os.path.exists(file_name):
-                with open(file_name, 'w') as f:
+                with open(file_name, 'w+') as f:
                     f.write(str(response))
             else:
                 with open(file_name, 'a') as f:
@@ -398,9 +367,9 @@ def cloudwatch_metric():
             logger.debug("CoreNodesRunning Metrics obtained for cluster %s " % i['cluster_id'])
             logger.debug(response)
 
-            file_name = dir + "/" + "CoreNodesRunning_%s.ans" % (i['cluster_id'])
+            file_name = "emr_metrics/" + i['cluster_id'] + "/" + "CoreNodesRunning_%s.ans" % (i['cluster_id'])
             if not os.path.exists(file_name):
-                with open(file_name, 'w') as f:
+                with open(file_name, 'w+') as f:
                     f.write(str(response))
             else:
                 with open(file_name, 'a') as f:
