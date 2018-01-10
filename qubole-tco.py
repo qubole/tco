@@ -58,7 +58,7 @@ def cluster_details():
     day_pattern = re.compile("([\d]{1,4}) day")
 
     try:
-        logger.info("Fetching cluster id's across all AWS regions.......")
+        logger.info("Fetching cluster id's of last 60 days clusters, across all AWS regions.......")
         for region in aws_regions:
             client = boto3.client('emr', aws_access_key_id=access_key, aws_secret_access_key=secret_key,
                                   region_name=region)
@@ -67,7 +67,7 @@ def cluster_details():
                                             ClusterStates=['TERMINATED', 'TERMINATING', 'WAITING', 'RUNNING'])
             sleep(2)
             logger.debug("clusters" % response)
-            # print (now - timedelta(days=60))
+
             for i in range(0, len(response['Clusters'])):
                 id = response['Clusters'][i]['Id']
 
@@ -134,17 +134,8 @@ def cluster_details():
             sys.exit(0)
 
         cluster_status = stdout
-        # print "s_time", cluster_status['Cluster']["Status"]["Timeline"]["CreationDateTime"]
         s_t = str(cluster_status['Cluster']["Status"]["Timeline"]["CreationDateTime"])
-        # if '+' in s_t:
-        #     s_t = s_t.split('+')[0]
-        # elif '-' in s_t:
-        #     s_t = s_t.split('-')[0]
-        # else:
-        #     zone_diff = ""
         s_t = s_t.split('.')[0]
-        # date_format = "%Y-%m-%d %H:%M:%S"+s_t
-        # s_t = strftime("%Y-%m-%d %H:%M:%S", gmtime(mktime(strptime(s_t, "%Y-%m-%d %H:%M:%S"))))
         s_time = datetime.strptime(s_t, '%Y-%m-%d %H:%M:%S')
         mssg1 = "cluster_status['Cluster']['Status']['Timeline']['CreationDateTime'] = %s", \
                 cluster_status['Cluster']['Status']['Timeline']['CreationDateTime']
@@ -157,8 +148,6 @@ def cluster_details():
         else:
             e_t = str(cluster_status['Cluster']["Status"]["Timeline"]["EndDateTime"])
             e_t = e_t.split('.')[0]
-            # date_format = "%Y-%m-%d %H:%M:%S" + e_t
-            # e_t = strftime("%Y-%m-%d %H:%M:%S", gmtime(mktime(strptime(e_t, "%Y-%m-%d %H:%M:%S"))))
             e_time = datetime.strptime(e_t, '%Y-%m-%d %H:%M:%S')
 
             mssg2 = "cluster_status['Cluster']['Status']['Timeline']['EndDateTime'] = ", \
@@ -243,10 +232,6 @@ def cloudwatch_metric():
     logger.addHandler(consolelog)
     logger.addHandler(filelog)
     logger.info("Now fetching cloudwatch metrics of selected 10 clusters....")
-
-
-    # if not os.path.exists(top_dir):
-    #     os.makedirs(top_dir)
 
     for i in cluster_id_region_time:
         try:
