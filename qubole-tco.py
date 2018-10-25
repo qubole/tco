@@ -8,7 +8,6 @@ import sys
 from datetime import datetime, timedelta
 from operator import itemgetter
 from time import sleep, gmtime, mktime, strptime, strftime
-from boto.s3.connection import S3Connection
 import boto3
 import pytz
 from botocore.exceptions import ClientError
