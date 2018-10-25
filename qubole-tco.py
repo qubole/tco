@@ -8,7 +8,7 @@ import sys
 from datetime import datetime, timedelta
 from operator import itemgetter
 from time import sleep, gmtime, mktime, strptime, strftime
-
+from boto.s3.connection import S3Connection
 import boto3
 import pytz
 from botocore.exceptions import ClientError
@@ -69,31 +69,24 @@ def cluster_details():
         for region in aws_regions:
             client = boto3.client('emr', aws_access_key_id=access_key, aws_secret_access_key=secret_key, region_name=region)
             response = client.list_clusters(CreatedAfter=(now - timedelta(days=60)),
-                                            CreatedBefore=datetime(now.year, now.month, now.day),
                                             ClusterStates=['TERMINATED', 'TERMINATING', 'WAITING', 'RUNNING'])
             sleep(2)
             logger.debug("clusters" % response)
-            print (now - timedelta(days=60))
             for i in range(0, len(response['Clusters'])):
                 id = response['Clusters'][i]['Id']
 
                 cluster_state = response['Clusters'][i]['Status']['State']
-                print id
                 if cluster_state == 'WAITING' or cluster_state == 'RUNNING' or cluster_state == 'TERMINATING':
-                    print id
-                    print cluster_state
                     end = now_e
                 else:
-                    print id
-                    print cluster_state
                     end = response['Clusters'][i]['Status']['Timeline']['EndDateTime']
 
                 time_stamp = end - response['Clusters'][i]['Status']['Timeline']['CreationDateTime']
 
-                time_s = day_pattern.search(str(time_stamp))
-
+                # time_s = day_pattern.search(str(time_stamp))
+                time_s = str(time_stamp).split(' ')[0]
                 if time_s is not None:
-                    cluster_id_timestamp.append({'cluster_id': id, 'time_stamp': time_s.group(1), 'region': region})
+                    cluster_id_timestamp.append({'cluster_id': id, 'time_stamp': time_s, 'region': region})
 
         logger.info("Fetched Clusters - %s" % json.dumps(cluster_id_timestamp))
     except ClientError as e:
@@ -270,8 +263,8 @@ def cloudwatch_metric():
                                                             'Value': i['cluster_id']
                                                         },
                                                     ],
-                                                    StartTime=startTime,
-                                                    EndTime=endTime,
+                                                    StartTime=str(startTime).split(" ")[0],
+                                                    EndTime=str(endTime).split(" ")[0],
                                                     Period=300,
                                                     Statistics=[
                                                         'Average', 'Minimum', 'Maximum',
@@ -280,7 +273,6 @@ def cloudwatch_metric():
 
             logger.debug("MemoryAvailableMB Metrics obtained for cluster %s " % i['cluster_id'])
             logger.debug(response)
-            #response
             #response = json.dumps(response, default=datetime_handler)
             file_name = dir + "/" + "MemoryAvailableMB_%s.ans" % (i['cluster_id'])
             if not os.path.exists(file_name):
@@ -299,8 +291,8 @@ def cloudwatch_metric():
                                                             'Value': i['cluster_id']
                                                         },
                                                     ],
-                                                    StartTime=startTime,
-                                                    EndTime=endTime,
+                                                    StartTime=str(startTime).split(" ")[0],
+                                                    EndTime=str(endTime).split(" ")[0],
                                                     Period=300,
                                                     Statistics=[
                                                         'Average', 'Minimum', 'Maximum',
@@ -327,8 +319,8 @@ def cloudwatch_metric():
                                                             'Value': i['cluster_id']
                                                         },
                                                     ],
-                                                    StartTime=startTime,
-                                                    EndTime=endTime,
+                                                    StartTime=str(startTime).split(" ")[0],
+                                                    EndTime=str(endTime).split(" ")[0],
                                                     Period=300,
                                                     Statistics=[
                                                         'Average', 'Minimum', 'Maximum',
@@ -356,8 +348,8 @@ def cloudwatch_metric():
                                                             'Value': i['cluster_id']
                                                         },
                                                     ],
-                                                    StartTime=startTime,
-                                                    EndTime=endTime,
+                                                    StartTime=str(startTime).split(" ")[0],
+                                                    EndTime=str(endTime).split(" ")[0],
                                                     Period=300,
                                                     Statistics=[
                                                         'Average', 'Minimum', 'Maximum',
@@ -389,6 +381,9 @@ def cloudwatch_metric():
     shutil.rmtree('./emr_metrics')
 
     logger.info("Success!  file %s.zip is created successfully in the same location." % zipfile)
+    s3 = boto3.resource('s3')
+    zipfile = zipfile+".zip"
+    s3.Bucket('emr-tco').upload_file(zipfile, zipfile)
     return {"message": "files created successfully in the same location", "status": "success"}
 
 
