@@ -380,7 +380,7 @@ def cloudwatch_metric():
     shutil.rmtree('./emr_metrics')
 
     logger.info("Success!  file %s.zip is created successfully in the same location." % zipfile)
-    s3 = boto3.resource('s3')
+    s3 = boto3.resource('s3',aws_access_key_id=access_key, aws_secret_access_key=secret_key)
     zipfile = zipfile+".zip"
     s3.Bucket('emr-tco').upload_file(zipfile, zipfile)
     return {"message": "files created successfully in the same location", "status": "success"}
